@@ -34,7 +34,11 @@ EXPECTED_COLUMNS = {
 def test_health_returns_ok(client):
     r = client.get("/health")
     assert r.status_code == 200
-    assert r.get_json() == {"ok": True, "app": "phishguard"}
+    body = r.get_json()
+    assert {k: body[k] for k in ("ok", "app")} == {"ok": True, "app": "phishguard"}
+    # A fingerprint of the data folder (so the launcher knows it is its own engine), never the path itself.
+    assert set(body) == {"ok", "app", "instance"} and len(body["instance"]) == 16
+    assert int(body["instance"], 16) >= 0 and "\\" not in r.get_data(as_text=True)
 
 
 @pytest.mark.parametrize("table", sorted(EXPECTED_COLUMNS))
