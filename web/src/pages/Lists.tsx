@@ -1,16 +1,14 @@
 import * as React from "react"
 import { toast } from "sonner"
-import { PlusIcon, ShieldBanIcon, ShieldCheckIcon, Trash2Icon } from "lucide-react"
+import { Trash2Icon } from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Empty, EmptyDescription, EmptyHeader } from "@/components/ui/empty"
 import { Input } from "@/components/ui/input"
 import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemTitle } from "@/components/ui/item"
 import { Label } from "@/components/ui/label"
 import { api, errText } from "@/lib/api"
-import { cn } from "@/lib/utils"
 
 type Entry = { id: number; domain: string; kind: "allow" | "block"; note: string | null; added_by: string | null; created_at: string }
 
@@ -79,21 +77,12 @@ function Column(props: {
       toast.error(errText(err))
     }
   }
-  const Icon = props.kind === "allow" ? ShieldCheckIcon : ShieldBanIcon
   const id = `add-${props.kind}`
   return (
-    <Card className="bg-gradient-to-t from-primary/5 to-card shadow-xs dark:bg-card">
+    <Card className="shadow-xs">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Icon className={cn("size-5", props.kind === "allow" ? "text-clear" : "text-danger")} />
-          {props.title}
-        </CardTitle>
+        <CardTitle className="text-lg">{props.title}</CardTitle>
         <CardDescription>{props.text}</CardDescription>
-        <CardAction>
-          <Badge variant="outline" className="tabular-nums">
-            {props.items?.length ?? 0}
-          </Badge>
-        </CardAction>
       </CardHeader>
       <CardContent className="grid gap-4">
         <form onSubmit={add} className="flex gap-2">
@@ -102,7 +91,6 @@ function Column(props: {
           </Label>
           <Input id={id} placeholder={`e.g. ${props.example}`} className="font-mono" value={domain} onChange={(e) => setDomain(e.target.value)} />
           <Button type="submit" variant="outline">
-            <PlusIcon />
             Add
           </Button>
         </form>
@@ -127,8 +115,7 @@ function Column(props: {
         ) : (
           <Empty className="border border-dashed py-8">
             <EmptyHeader>
-              <EmptyTitle>Nothing here yet</EmptyTitle>
-              <EmptyDescription>Add a site above.</EmptyDescription>
+              <EmptyDescription>No sites yet.</EmptyDescription>
             </EmptyHeader>
           </Empty>
         )}

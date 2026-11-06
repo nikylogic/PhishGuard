@@ -1,15 +1,6 @@
 import * as React from "react"
-import {
-  LayoutDashboardIcon,
-  HistoryIcon,
-  ListChecksIcon,
-  ScanTextIcon,
-  Settings2Icon,
-  ShieldCheckIcon,
-  SearchIcon,
-} from "lucide-react"
+import { HistoryIcon, LayoutDashboardIcon, ListChecksIcon, ScanTextIcon, Settings2Icon, ShieldCheckIcon } from "lucide-react"
 
-import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
@@ -23,22 +14,19 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { boot } from "@/lib/api"
+import type { Route } from "@/lib/router"
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({ route, ...props }: React.ComponentProps<typeof Sidebar> & { route: Route }) {
   const user = boot.user!
-  const at = boot.page === "check" ? "history" : boot.page
+  const at = route.page === "check" ? "history" : route.page
   const main = [
     { title: "Dashboard", url: "/", icon: <LayoutDashboardIcon />, isActive: at === "home" },
     { title: "History", url: "/history", icon: <HistoryIcon />, isActive: at === "history" },
     { title: "Trusted & blocked", url: "/lists", icon: <ListChecksIcon />, isActive: at === "lists" },
+    { title: "AI Guard lab", url: "/guard", icon: <ScanTextIcon />, isActive: at === "guard" },
   ]
-  const tools = [{ title: "AI Guard lab", url: "/guard", icon: <ScanTextIcon />, isActive: at === "guard" }]
-  const secondary = [
-    ...(user.role === "admin"
-      ? [{ title: "Settings", url: "/settings", icon: <Settings2Icon />, isActive: at === "settings" }]
-      : []),
-    { title: "Search", url: "/history", icon: <SearchIcon /> },
-  ]
+  const secondary =
+    user.role === "admin" ? [{ title: "Settings", url: "/settings", icon: <Settings2Icon />, isActive: at === "settings" }] : []
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -55,8 +43,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={main} />
-        <NavDocuments label="Tools" items={tools} />
-        <NavSecondary items={secondary} className="mt-auto" />
+        {secondary.length > 0 && <NavSecondary items={secondary} className="mt-auto" />}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} />

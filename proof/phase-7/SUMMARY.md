@@ -7,11 +7,12 @@ The UI is built with **shadcn/ui** and copies the layout of its `dashboard-01` b
 ## What was built
 
 - **Shell (dashboard-01):**
-  - **Sidebar:** the PhishGuard brand, and "Inspect a link" in the Quick Create spot, which opens a dialog. Below that: Dashboard, History, Trusted & blocked, a Tools group with the AI Guard lab, and Settings (admins only). The account menu at the bottom has Log out.
+  - **Sidebar:** the PhishGuard brand, and "Inspect a link" in the Quick Create spot, which opens a dialog. Below that: Dashboard, History, Trusted & blocked, AI Guard lab, and Settings (admins only). The account menu at the bottom has Log out.
+  - **Smooth navigation:** moving between pages does not reload the app. A small client-side router (`web/src/lib/router.ts`) swaps only the page area, and the sidebar and header stay in place. Where the browser supports it, the page area cross-fades in 140 ms; there is no animation if the user asks for reduced motion. Flask still serves every URL directly, for refresh and bookmarks, and still decides who may see what. A page the client may not show (for example Settings for an analyst) falls back to a normal page load.
 - **Dashboard (`/`):**
-  - **Four cards:** checked today (with the change since yesterday), stopped today, trackers spotted, and the clear rate over 3 months.
-  - **Chart:** a stacked area chart of Clear / Caution / Danger checks per day, with the Last 3 months / 30 days / 7 days toggle.
-  - **Table:** recent checks with tabs by verdict, plus row selection with "Block selected sites", a column picker, a per-row actions menu and pagination.
+  - **Four cards:** checked today (and yesterday), stopped today, trackers spotted, and the clear rate over 3 months. Each card is a label, a number and one short line.
+  - **Chart:** a stacked area chart of Clear / Caution / Danger checks per day, with the Last 7 days / 30 days / 3 months toggle.
+  - **Table:** recent checks with tabs by verdict, a per-row actions menu (open, copy, block) and pagination.
 - **Airlock (`/check/<id>`):**
   - **Verdict card:** a large verdict card tinted by the verdict, showing the risk score and the link with its real domain in bold.
   - **Screenshot:** the sandbox screenshot; click it to enlarge.
@@ -45,6 +46,16 @@ The policy has no `unsafe-inline`, so a page may not inject a `<style>` tag. Sto
 
 The Vaul drawer is not used. The final policy is: `style-src 'self' 'nonce-<fresh per page>'; script-src 'self'`, still without `unsafe-inline`.
 
+## Cleanup pass
+
+After the first shadcn version, everything that was decoration rather than information was removed:
+
+- **Sidebar:** duplicate entries (a History icon button, a "Search" item that only opened History, a one-item "Tools" group, and Settings repeated in the account menu).
+- **Dashboard:** extra badges and icon lines on the cards.
+- **Table:** row checkboxes, the column picker, the gauge-dot column, a second "Inspect a link" button and the "Waiting" badge on every row.
+- **Wording:** filler sentences and icons in titles ("Each one from 0 (quiet) to 100", "Nothing in this picture can reach you").
+- **Look:** gradient fills, and the decorative rings and icon tiles on the login page.
+
 ## Bugs found and fixed in this phase
 
 | Found by | Problem | Fix |
@@ -53,7 +64,7 @@ The Vaul drawer is not used. The final policy is: `style-src 'self' 'nonce-<fres
 | Earlier version of this phase, logging in through a real browser | Login was refused, because `Referrer-Policy: no-referrer` makes Chrome send `Origin: null`. | Policy changed to `same-origin`. |
 | Earlier contrast test | Three light-theme colours were below 4.5:1. | The verdict colours were redefined as tokens, and the test now passes in both themes. |
 
-## Tests (`tests/test_phase7_ui.py`, 20 passed)
+## Tests (`tests/test_phase7_ui.py`, 21 passed)
 
 These run in real Chrome against a live server on a free port.
 
@@ -64,6 +75,7 @@ These run in real Chrome against a live server on a free port.
   - The hidden AI instructions are shown.
   - "Open anyway" asks for confirmation.
   - "Inspect a link" in the sidebar leads to the Airlock.
+  - Moving between pages through the sidebar, and back, never reloads the app.
   - The Guard lab flags the example attack.
 - **Roles:** an analyst sees no Settings link and gets a 403 "Not allowed" page. A logged-out user is sent to login.
 - **Build:**
@@ -79,7 +91,7 @@ These run in real Chrome against a live server on a free port.
   - Dark mode follows the system setting.
   - Text contrast meets WCAG AA in light and dark. Colours are resolved through a canvas, so `oklch()` colours are measured correctly.
 
-**Full suite after this phase:** 304 passed, 1 skipped (the live-LLM test, which needs an API key).
+**Full suite after this phase:** 305 passed, 1 skipped (the live-LLM test, which needs an API key).
 
 ## Proof files
 

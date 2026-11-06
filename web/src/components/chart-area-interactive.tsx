@@ -22,7 +22,7 @@ const fmt = (v: string) => new Date(v + "T00:00:00Z").toLocaleDateString(undefin
 
 export function ChartAreaInteractive({ stats }: { stats: Stats | null }) {
   const isMobile = useIsMobile()
-  const [timeRange, setTimeRange] = React.useState<Range>("90d")
+  const [timeRange, setTimeRange] = React.useState<Range>("7d")
 
   React.useEffect(() => {
     if (isMobile) setTimeRange("7d")

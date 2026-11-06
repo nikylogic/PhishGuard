@@ -6,6 +6,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { boot } from "@/lib/api"
+import { interceptLinks, TITLES, useRoute, type Route } from "@/lib/router"
 import { Airlock } from "@/pages/Airlock"
 import { GuardLab } from "@/pages/GuardLab"
 import { History } from "@/pages/History"
@@ -15,21 +16,12 @@ import { Login, Setup } from "@/pages/Login"
 import { Message } from "@/pages/Message"
 import { Settings } from "@/pages/Settings"
 
-const TITLES: Record<string, string> = {
-  home: "Dashboard",
-  check: "Airlock",
-  history: "History",
-  lists: "Trusted & blocked",
-  guard: "AI Guard lab",
-  settings: "Settings",
-}
-
-function Page() {
-  switch (boot.page) {
+function Page({ route }: { route: Route }) {
+  switch (route.page) {
     case "home":
       return <Home />
     case "check":
-      return <Airlock sid={boot.sid} />
+      return <Airlock key={route.sid} sid={route.sid} />
     case "history":
       return <History />
     case "lists":
@@ -44,22 +36,30 @@ function Page() {
 }
 
 // dashboard-01: inset sidebar, site header, then the page in a container-query column.
-function Shell({ children }: { children: React.ReactNode }) {
+// Only the page area changes when you move around; the sidebar and header stay mounted.
+function Shell() {
+  const route = useRoute()
+  React.useEffect(() => {
+    document.addEventListener("click", interceptLinks)
+    return () => document.removeEventListener("click", interceptLinks)
+  }, [])
   return (
     <SidebarProvider
       style={
         {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
+          "--sidebar-width": "calc(var(--spacing) * 64)",
           "--header-height": "calc(var(--spacing) * 12)",
         } as React.CSSProperties
       }
     >
-      <AppSidebar variant="inset" />
+      <AppSidebar variant="inset" route={route} />
       <SidebarInset>
-        <SiteHeader title={TITLES[boot.page] ?? boot.title ?? "PhishGuard"} />
+        <SiteHeader title={TITLES[route.page] ?? boot.title ?? "PhishGuard"} />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">{children}</div>
+            <div className="page-view flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+              <Page route={route} />
+            </div>
           </div>
         </div>
       </SidebarInset>
@@ -78,11 +78,7 @@ function Body() {
       </main>
     )
   }
-  return (
-    <Shell>
-      <Page />
-    </Shell>
-  )
+  return <Shell />
 }
 
 export default function App() {

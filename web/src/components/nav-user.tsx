@@ -1,10 +1,9 @@
-import { EllipsisVerticalIcon, LogOutIcon, SettingsIcon } from "lucide-react"
+import { EllipsisVerticalIcon, LogOutIcon } from "lucide-react"
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -19,9 +18,7 @@ function Who({ user }: { user: User }) {
   return (
     <>
       <Avatar className="h-8 w-8 rounded-lg">
-        <AvatarFallback className="rounded-lg bg-primary font-medium text-primary-foreground">
-          {user.username.slice(0, 2).toUpperCase()}
-        </AvatarFallback>
+        <AvatarFallback className="rounded-lg">{user.username.slice(0, 2).toUpperCase()}</AvatarFallback>
       </Avatar>
       <div className="grid flex-1 text-left text-sm leading-tight">
         <span className="truncate font-medium">{user.username}</span>
@@ -65,17 +62,6 @@ export function NavUser({ user }: { user: User }) {
                 <Who user={user} />
               </div>
             </DropdownMenuLabel>
-            {user.role === "admin" && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuGroup>
-                  <DropdownMenuItem onSelect={() => go("/settings")}>
-                    <SettingsIcon />
-                    Settings
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-              </>
-            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={logout}>
               <LogOutIcon />

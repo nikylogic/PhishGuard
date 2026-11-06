@@ -149,3 +149,16 @@
     font-family: var(--font-mono);
     }
 }
+/* Page changes: only the content area cross-fades; sidebar and header stay still. */
+.page-view {
+  view-transition-name: page;
+}
+::view-transition-old(page),
+::view-transition-new(page) {
+  animation-duration: 140ms;
+  animation-timing-function: ease-out;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}

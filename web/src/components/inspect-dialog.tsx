@@ -5,20 +5,19 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
-import { api, errText, go } from "@/lib/api"
+import { api, errText } from "@/lib/api"
+import { navigate } from "@/lib/router"
 
 // The URL box: sends a pasted link to the airlock and opens its check page.
-export function InspectForm({ autoFocus, onCancel }: { autoFocus?: boolean; onCancel?: () => void }) {
+export function InspectForm({ autoFocus, onDone }: { autoFocus?: boolean; onDone?: () => void }) {
   const [url, setUrl] = React.useState("")
   const [busy, setBusy] = React.useState(false)
   const submit = async (e: React.FormEvent) => {
@@ -27,7 +26,8 @@ export function InspectForm({ autoFocus, onCancel }: { autoFocus?: boolean; onCa
     setBusy(true)
     try {
       const r = await api<{ id: number }>("/api/scan", { method: "POST", body: { url } })
-      go(`/check/${r.id}`)
+      onDone?.()
+      navigate(`/check/${r.id}`)
     } catch (err) {
       toast.error(errText(err))
       setBusy(false)
@@ -52,11 +52,6 @@ export function InspectForm({ autoFocus, onCancel }: { autoFocus?: boolean; onCa
             onChange={(e) => setUrl(e.target.value)}
           />
         </div>
-        {onCancel && (
-          <Button type="button" variant="outline" size="lg" onClick={onCancel}>
-            Cancel
-          </Button>
-        )}
         <Button type="submit" size="lg" disabled={busy || !url.trim()}>
           {busy && <Spinner />}
           Inspect
@@ -66,25 +61,15 @@ export function InspectForm({ autoFocus, onCancel }: { autoFocus?: boolean; onCa
   )
 }
 
-// dashboard-01's "Quick Create" becomes "Inspect a link".
 export function InspectDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Inspect a link</DialogTitle>
-          <DialogDescription>
-            It opens in a sealed, throwaway browser first. You decide after you see the verdict.
-          </DialogDescription>
+          <DialogDescription>It opens in the sandbox first. You decide after the verdict.</DialogDescription>
         </DialogHeader>
-        <InspectForm autoFocus />
-        <DialogFooter className="sm:justify-start">
-          <DialogClose asChild>
-            <Button type="button" variant="ghost" size="sm">
-              Close
-            </Button>
-          </DialogClose>
-        </DialogFooter>
+        <InspectForm autoFocus onDone={() => onOpenChange(false)} />
       </DialogContent>
     </Dialog>
   )

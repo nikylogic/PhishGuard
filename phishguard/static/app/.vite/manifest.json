@@ -60,12 +60,12 @@
     "src": "node_modules/@fontsource-variable/space-grotesk/files/space-grotesk-vietnamese-wght-normal.woff2"
   },
   "src/main.tsx": {
-    "file": "assets/main-BK70GHJp.js",
+    "file": "assets/main-B8gFD2uf.js",
     "name": "main",
     "src": "src/main.tsx",
     "isEntry": true,
     "css": [
-      "assets/main-CUt3c6vM.css"
+      "assets/main-BYdtabWC.css"
     ],
     "assets": [
       "assets/ibm-plex-sans-cyrillic-ext-wght-normal-d45eAU9y.woff2",

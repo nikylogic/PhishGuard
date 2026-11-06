@@ -1,5 +1,5 @@
 import * as React from "react"
-import { AlertCircleIcon, BotIcon, FingerprintIcon, ScanEyeIcon, ShieldCheckIcon, ShieldIcon } from "lucide-react"
+import { AlertCircleIcon, ShieldCheckIcon } from "lucide-react"
 
 import { Alert, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -18,9 +18,7 @@ function Frame({ title, text, children }: { title: string; text: string; childre
           <CardContent className="grid p-0 md:grid-cols-2">
             <div className="flex flex-col gap-6 p-6 md:p-8">
               <a href="/" className="flex items-center gap-2 font-heading font-semibold">
-                <span className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                  <ShieldIcon className="size-4" />
-                </span>
+                <ShieldCheckIcon className="size-5" />
                 PhishGuard
               </a>
               <div className="grid gap-1">
@@ -29,31 +27,12 @@ function Frame({ title, text, children }: { title: string; text: string; childre
               </div>
               {children}
             </div>
-            <div className="relative hidden flex-col justify-end gap-6 overflow-hidden bg-primary p-8 text-primary-foreground md:flex">
-              <div aria-hidden className="absolute -top-24 -right-24 size-72 rounded-full border-[40px] border-primary-foreground/5" />
-              <div aria-hidden className="absolute top-16 -left-16 size-40 rounded-full border-[24px] border-primary-foreground/5" />
-              <h2 className="relative text-3xl leading-tight font-semibold text-balance">Every link waits in the airlock first.</h2>
-              <p className="relative text-primary-foreground/75">
-                PhishGuard opens suspicious links in a sealed, throwaway browser and checks them before they reach you.
+            <div className="hidden flex-col justify-end gap-4 bg-primary p-8 text-primary-foreground md:flex">
+              <h2 className="text-3xl leading-tight font-semibold text-balance">Every link waits in the airlock first.</h2>
+              <p className="text-primary-foreground/75">
+                PhishGuard opens links in a throwaway browser and checks them for phishing, malware, trackers and hidden AI instructions
+                before they reach you.
               </p>
-              <ul className="relative grid gap-3 text-sm">
-                {[
-                  [ScanEyeIcon, "Phishing pages and fake logins"],
-                  [ShieldCheckIcon, "Malware downloads, caught in quarantine"],
-                  [FingerprintIcon, "Trackers, IP loggers and fingerprinting"],
-                  [BotIcon, "Hidden orders aimed at AI assistants"],
-                ].map(([Icon, label]) => {
-                  const I = Icon as typeof ScanEyeIcon
-                  return (
-                    <li key={label as string} className="flex items-center gap-3">
-                      <span className="flex size-7 items-center justify-center rounded-md bg-primary-foreground/10">
-                        <I className="size-4" />
-                      </span>
-                      {label as string}
-                    </li>
-                  )
-                })}
-              </ul>
             </div>
           </CardContent>
         </Card>

@@ -3,14 +3,11 @@ import * as React from "react"
 import { toast } from "sonner"
 import {
   ArrowDownIcon,
-  BanIcon,
   CopyIcon,
   ExternalLinkIcon,
   ImageOffIcon,
   LockIcon,
-  ScanEyeIcon,
   SparklesIcon,
-  WandSparklesIcon,
 } from "lucide-react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -161,24 +158,27 @@ export function Airlock({ sid }: { sid: number }) {
   return (
     <div className="flex flex-col gap-4 px-4 md:gap-6 lg:px-6">
       {/* Verdict hero */}
-      <Card className={cn("@container/card overflow-hidden bg-gradient-to-t to-card shadow-xs", TONE[level].hero)}>
+      <Card className={cn("@container/card overflow-hidden shadow-xs", TONE[level].soft)}>
         <CardHeader>
-          <CardDescription className="flex items-center gap-2">
+          <CardDescription>
             <VerdictBadge level={level} />
-            <span>Airlock · check #{sid}</span>
           </CardDescription>
           <CardTitle className={cn("text-2xl font-semibold text-balance @[500px]/card:text-3xl", !busy && TONE[level].text)}>
             {headline}
           </CardTitle>
           <CardAction className="text-right">
-            <div className="text-xs text-muted-foreground">risk</div>
-            <div className={cn("font-heading text-4xl font-semibold tabular-nums", !busy && TONE[level].text)}>
-              {busy ? <Spinner className="ml-auto size-8 text-muted-foreground" /> : d!.score}
-            </div>
+            {busy ? (
+              <Spinner className="size-6 text-muted-foreground" />
+            ) : (
+              <div className={cn("font-heading text-4xl font-semibold tabular-nums", TONE[level].text)}>
+                {d!.score}
+                <span className="text-base font-normal text-muted-foreground">/100</span>
+              </div>
+            )}
           </CardAction>
         </CardHeader>
         <CardFooter className="gap-2">
-          <p className="min-w-0 flex-1 rounded-md border bg-background/60 px-3 py-1.5 font-mono text-sm break-all" aria-label="The link">
+          <p className="min-w-0 flex-1 rounded-md border bg-background px-3 py-1.5 font-mono text-sm break-all" aria-label="The link">
             <span className="text-muted-foreground">{pre}</span>
             <strong className="font-semibold text-foreground">{main}</strong>
             <span className="text-muted-foreground">{rest}</span>
@@ -191,16 +191,8 @@ export function Airlock({ sid }: { sid: number }) {
         {/* Screenshot from the sandbox */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <ScanEyeIcon className="size-4" />
-              Seen inside the sandbox
-            </CardTitle>
-            <CardDescription>Not on your computer. Nothing in this picture can reach you.</CardDescription>
-            {timing ? (
-              <CardAction>
-                <Badge variant="outline">inspected in {timing.toFixed(1)} s</Badge>
-              </CardAction>
-            ) : null}
+            <CardTitle className="text-base">Sandbox view</CardTitle>
+            {timing ? <CardDescription>Opened in {timing.toFixed(1)} s</CardDescription> : null}
           </CardHeader>
           <CardContent>
             {d?.screenshot_url ? (
@@ -239,8 +231,8 @@ export function Airlock({ sid }: { sid: number }) {
         {/* Gauges, reasons and the choices */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Four gauges</CardTitle>
-            <CardDescription>{busy ? "The page is being opened in the sandbox and watched." : "Each one from 0 (quiet) to 100."}</CardDescription>
+            <CardTitle className="text-base">Risk breakdown</CardTitle>
+            {busy && <CardDescription>Opening the page in the sandbox…</CardDescription>}
           </CardHeader>
           <CardContent className="flex flex-col gap-5">
             <div className="grid gap-3">
@@ -306,12 +298,10 @@ export function Airlock({ sid }: { sid: number }) {
                 </Button>
               ) : (
                 <Button variant="outline" disabled={busy} onClick={() => decide("open_clean")}>
-                  <WandSparklesIcon />
                   {removed ? `Open clean link (−${removed} tracker tag${removed > 1 ? "s" : ""})` : "Open clean link"}
                 </Button>
               )}
               <Button variant="outline" disabled={busy || isBlocked} onClick={() => decide("block")}>
-                <BanIcon />
                 {isBlocked ? "Blocked" : "Block this site"}
               </Button>
               <Tooltip>
@@ -501,7 +491,7 @@ function Panels({ d }: { d: Scan }) {
             {g.label === "injection" && g.chunk && (
               <Alert variant="destructive">
                 <SparklesIcon />
-                <AlertTitle>Hidden sentence aimed at AI assistants</AlertTitle>
+                <AlertTitle>Hidden instruction aimed at AI assistants</AlertTitle>
                 <AlertDescription>
                   <blockquote className="border-l-2 pl-3 italic">{g.chunk}</blockquote>
                 </AlertDescription>

@@ -118,8 +118,8 @@ def test_home_is_the_dashboard_with_todays_counts(live):
     assert card.locator("[data-slot=card-title]").inner_text() == "3"
     page.locator("table a[href^='/check/']").first.wait_for()
     assert page.locator("table a[href^='/check/']").count() == 3
-    assert page.get_by_role("tab", name=re.compile("All checks")).count() == 1
-    assert page.get_by_role("radio", name="Last 3 months").count() == 1   # the chart's range toggle
+    assert page.get_by_role("tab", name="All", exact=True).count() == 1
+    assert page.get_by_role("radio", name="Last 7 days").count() == 1   # the chart range toggle
     snap(page, "home")
     assert page.errors == []
     page.context.close()
@@ -174,6 +174,30 @@ def test_inspect_a_link_from_the_sidebar_goes_to_airlock(live):
     page.get_by_role("button", name="Inspect", exact=True).click()
     page.wait_for_url(re.compile(r"/check/\d+$"))
     page.get_by_text(re.compile("This link looks safe|Be careful")).wait_for()
+    assert page.errors == []
+    page.context.close()
+
+
+def test_moving_between_pages_does_not_reload_the_app(live):
+    page = session(live, "admin", "correct-horse-1")
+    page.get_by_text("Checked today").wait_for()
+    page.evaluate("window.__stillHere = true")
+    for name, path, marker in (("History", "/history", None),
+                               ("Trusted & blocked", "/lists", "Trusted"),
+                               ("AI Guard lab", "/guard", "Text to check"),
+                               ("Settings", "/settings", "Your real browser"),
+                               ("Dashboard", "/", "Checked today")):
+        page.get_by_role("link", name=name, exact=True).first.click()
+        page.wait_for_url(live["base"] + path)
+        if marker:
+            page.get_by_text(marker).first.wait_for()
+        else:
+            page.get_by_label("Search links or page titles").wait_for()
+        assert page.get_by_role("heading", level=1).inner_text() == name
+        assert page.evaluate("window.__stillHere") is True, f"{name} reloaded the page"
+    page.go_back()
+    page.wait_for_url(live["base"] + "/settings")
+    assert page.evaluate("window.__stillHere") is True
     assert page.errors == []
     page.context.close()
 
