@@ -187,7 +187,7 @@ export function Airlock({ sid }: { sid: number }) {
         </CardFooter>
       </Card>
 
-      <div className="grid grid-cols-1 gap-4 md:gap-6 @4xl/main:grid-cols-2">
+      <div className="grid grid-cols-1 items-start gap-4 md:gap-6 @4xl/main:grid-cols-2">
         {/* Screenshot from the sandbox */}
         <Card>
           <CardHeader>
@@ -318,7 +318,7 @@ export function Airlock({ sid }: { sid: number }) {
       </div>
 
       <Tabs defaultValue="journey" className="gap-4">
-        <TabsList className="w-full justify-start overflow-x-auto sm:w-fit">
+        <TabsList className="h-auto flex-wrap justify-start">
           <TabsTrigger value="journey">Journey</TabsTrigger>
           <TabsTrigger value="privacy">Privacy report</TabsTrigger>
           <TabsTrigger value="files">Downloads</TabsTrigger>

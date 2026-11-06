@@ -14,6 +14,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+from . import browser
 from . import db as dbmod
 from . import pagerules  # noqa: F401 - registers the page rules
 from .guard.guard import get_guard
@@ -50,6 +51,7 @@ class ScanService:
         self.lock = threading.Lock()
         self.recover()
         self.write_allowlist_cache()
+        self.write_browser_cache()
 
     def recover(self):
         """After a restart, nothing is still running: close off unfinished scans honestly."""
@@ -83,6 +85,17 @@ class ScanService:
         tmp = self.instance / "allowlist.txt.tmp"
         tmp.write_text("\n".join(sorted(allow)) + "\n", encoding="utf-8")
         tmp.replace(self.instance / "allowlist.txt")
+
+    def write_browser_cache(self):
+        """The launcher opens trusted links itself, so it needs the real browser's program file."""
+        con = self._con()
+        try:
+            exe = browser.choose(get_settings(con).get("browser_path")) or ""
+        finally:
+            con.close()
+        tmp = self.instance / "browser.txt.tmp"
+        tmp.write_text(exe + "\n", encoding="utf-8")
+        tmp.replace(self.instance / "browser.txt")
 
     # --- create -------------------------------------------------------------------------------
     def create_scan(self, raw_url: str, source: str, user_id=None) -> dict:

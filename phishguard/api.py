@@ -306,7 +306,7 @@ def write_settings():
         v = str(v)[:500]
         if k == "llm_provider" and v not in LLM_PROVIDERS:
             return err("Unknown AI provider.")
-        if k == "browser_path" and v and not (v.lower().endswith(".exe") and browser.Path(v).exists()):
+        if k == "browser_path" and v and not browser.is_browser(v):
             return err("That browser program was not found.")
         if k == "llm_api_key" and v.startswith("•"):
             continue                       # the masked value came back unchanged
@@ -314,6 +314,8 @@ def write_settings():
                     (k, v))
         changed.append(k)
     con.commit()
+    if "browser_path" in changed:
+        svc().write_browser_cache()
     audit("settings", ", ".join(changed))
     return jsonify(ok=True, changed=changed)
 

@@ -1,0 +1,38 @@
+# What scripts/register_windows.py writes (dumped from a throwaway HKCU\Software\PhishGuardProof key;
+# the real script writes the same keys under HKCU\Software)
+
+[HKCU\Software\PhishGuardProof\Classes\PhishGuardURL]
+  (default) = PhishGuard link
+  URL Protocol = 
+  FriendlyTypeName = PhishGuard link
+[HKCU\Software\PhishGuardProof\Classes\PhishGuardURL\DefaultIcon]
+  (default) = "D:\PhishGuard\.venv\Scripts\pythonw.exe",0
+[HKCU\Software\PhishGuardProof\Classes\PhishGuardURL\shell]
+[HKCU\Software\PhishGuardProof\Classes\PhishGuardURL\shell\open]
+[HKCU\Software\PhishGuardProof\Classes\PhishGuardURL\shell\open\command]
+  (default) = "D:\PhishGuard\.venv\Scripts\pythonw.exe" "D:\PhishGuard\launcher\pg_open.pyw" "%1"
+[HKCU\Software\PhishGuardProof\Clients\StartMenuInternet\PhishGuard]
+  (default) = PhishGuard
+[HKCU\Software\PhishGuardProof\Clients\StartMenuInternet\PhishGuard\Capabilities]
+  ApplicationName = PhishGuard
+  ApplicationDescription = Opens every link in a sandbox first and checks it before it reaches your browser.
+  ApplicationIcon = "D:\PhishGuard\.venv\Scripts\pythonw.exe",0
+[HKCU\Software\PhishGuardProof\Clients\StartMenuInternet\PhishGuard\Capabilities\StartMenu]
+  StartMenuInternet = PhishGuard
+[HKCU\Software\PhishGuardProof\Clients\StartMenuInternet\PhishGuard\Capabilities\URLAssociations]
+  http = PhishGuardURL
+  https = PhishGuardURL
+[HKCU\Software\PhishGuardProof\Clients\StartMenuInternet\PhishGuard\DefaultIcon]
+  (default) = "D:\PhishGuard\.venv\Scripts\pythonw.exe",0
+[HKCU\Software\PhishGuardProof\Clients\StartMenuInternet\PhishGuard\shell]
+[HKCU\Software\PhishGuardProof\Clients\StartMenuInternet\PhishGuard\shell\open]
+[HKCU\Software\PhishGuardProof\Clients\StartMenuInternet\PhishGuard\shell\open\command]
+  (default) = "D:\PhishGuard\.venv\Scripts\pythonw.exe" "D:\PhishGuard\launcher\pg_open.pyw" "%1"
+[HKCU\Software\PhishGuardProof\RegisteredApplications]
+  PhishGuard = Software\PhishGuardProof\Clients\StartMenuInternet\PhishGuard\Capabilities
+
+# after unregister:
+removed Software\PhishGuardProof\Classes\PhishGuardURL
+removed Software\PhishGuardProof\Clients\StartMenuInternet\PhishGuard
+removed Software\PhishGuardProof\RegisteredApplications\PhishGuard
+remaining PhishGuard keys: 0
