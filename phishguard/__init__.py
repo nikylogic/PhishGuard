@@ -36,6 +36,12 @@ def read_or_create_secret(path: Path, nbytes: int = 32) -> str:
     return value
 
 
+def instance_id(path) -> str:
+    """A short fingerprint of the data folder (the same formula is in launcher/pglaunch.py)."""
+    import hashlib
+    return hashlib.sha256(str(Path(path).resolve()).lower().encode("utf-8")).hexdigest()[:16]
+
+
 def create_app(overrides: dict | None = None) -> Flask:
     overrides = overrides or {}
     instance = Path(overrides.get("INSTANCE_DIR", ROOT / "instance"))
@@ -113,6 +119,7 @@ def create_app(overrides: dict | None = None) -> Flask:
 
     @app.get("/health")
     def health():
-        return jsonify(ok=True, app="phishguard")
+        # "instance" lets the launcher tell its own engine from another PhishGuard copy on the same port.
+        return jsonify(ok=True, app="phishguard", instance=instance_id(app.config["INSTANCE_DIR"]))
 
     return app

@@ -184,6 +184,26 @@ def test_launcher_fails_closed_when_the_engine_is_someone_else(inst, monkeypatch
     assert r.code == 1 and r.windows == [] and "not opened" in r.alerts[0]
 
 
+def test_another_phishguard_on_the_port_gets_a_clear_message(inst, tmp_path):
+    """A different PhishGuard copy (another data folder) already answers on the port: say so plainly,
+    and do not send it the link."""
+    import threading
+    from waitress.server import create_server
+    from phishguard import create_app
+    other = create_app({"INSTANCE_DIR": str(tmp_path / "other-copy"), "TESTING": True})
+    srv = create_server(other, host="127.0.0.1", port=int(inst.env["PHISHGUARD_PORT"]))
+    threading.Thread(target=srv.run, daemon=True).start()
+    try:
+        r = run(inst, "http://unknown-site.example.top/")
+        d = pglaunch.main(["pg_open.pyw", "--dashboard"], env=inst.env, popen=Recorder(), alert=r.alerts.append,
+                          window=lambda u, c: pytest.fail("no window"))
+    finally:
+        srv.close()
+    assert r.code == 1 and d == 1 and r.windows == []
+    assert all("Another copy of PhishGuard is already running" in a for a in r.alerts)
+    assert "launcher key" not in " ".join(r.alerts)
+
+
 # ---------------------------------------------------------------- never looping back into PhishGuard
 
 def test_phishguard_is_never_chosen_as_the_real_browser(inst, tmp_path):

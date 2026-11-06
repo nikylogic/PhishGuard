@@ -118,12 +118,29 @@ def open_in_browser(exe: str, url: str, popen=subprocess.Popen) -> None:
 
 # --- the server -----------------------------------------------------------------------------
 
+def instance_id(path) -> str:
+    """A short fingerprint of the data folder (the same formula is in phishguard/__init__.py)."""
+    import hashlib
+    return hashlib.sha256(str(Path(path).resolve()).lower().encode("utf-8")).hexdigest()[:16]
+
+
+class OtherCopy(Failed):
+    """Another PhishGuard (a different install or data folder) already uses our port."""
+
+
 def healthy(cfg: dict, timeout: float = 0.5) -> bool:
+    """True when OUR engine answers. Raises OtherCopy when a different PhishGuard answers instead."""
     try:
         with urllib.request.urlopen(cfg["base"] + "/health", timeout=timeout) as r:
-            return json.loads(r.read()).get("app") == "phishguard"
+            info = json.loads(r.read())
     except (OSError, ValueError):
         return False
+    if info.get("app") != "phishguard":
+        return False
+    if info.get("instance") != instance_id(cfg["instance"]):
+        raise OtherCopy(f"Another copy of PhishGuard is already running on this PC (port {cfg['port']}). "
+                        "Close it, then try again.")
+    return True
 
 
 def start_server(cfg: dict, popen=subprocess.Popen, env=os.environ) -> None:
