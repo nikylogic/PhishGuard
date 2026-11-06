@@ -22,6 +22,9 @@ _REG = Path(__file__).resolve().parent.parent / "launcher" / "registry.py"
 def registry():
     if os.name != "nt":
         return None
+    if getattr(sys, "frozen", False):          # the installed app bundles it as a normal module
+        import registry  # noqa: PLC0415
+        return registry
     if "pg_registry" not in sys.modules:
         spec = importlib.util.spec_from_file_location("pg_registry", _REG)
         mod = importlib.util.module_from_spec(spec)

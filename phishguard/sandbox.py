@@ -186,11 +186,16 @@ class Sandbox:
         # "<-loopback>" removes Chrome's built-in exception for localhost, so even
         # 127.0.0.1 must go through the gatekeeper (and gets refused there).
         proxy = {"server": self.egress.server, "bypass": "<-loopback>"}
-        try:
-            self.browser = self._pw.chromium.launch(channel=self.channel, headless=True, args=args, proxy=proxy)
-        except PWError:
-            # Chrome not installed: fall back to Playwright's own Chromium if present.
-            self.browser = self._pw.chromium.launch(headless=True, args=args, proxy=proxy)
+        # Chrome if installed, else Microsoft Edge (on every Windows 10/11 PC), else Playwright's Chromium.
+        channels = [c for c in (self.channel, "msedge") if c] + [None]
+        for i, channel in enumerate(dict.fromkeys(channels)):
+            try:
+                opts = {"channel": channel} if channel else {}
+                self.browser = self._pw.chromium.launch(headless=True, args=args, proxy=proxy, **opts)
+                break
+            except PWError:
+                if i == len(dict.fromkeys(channels)) - 1:
+                    raise
         self.launches += 1
 
     def ensure(self):

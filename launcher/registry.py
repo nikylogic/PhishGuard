@@ -26,7 +26,12 @@ def default_pythonw() -> str:
     return str(pyw if pyw.exists() else exe)
 
 
+FROZEN = bool(getattr(sys, "frozen", False))      # running as the installed PhishGuard.exe
+
+
 def command(pythonw: str | None = None, script: Path = LAUNCHER) -> str:
+    if FROZEN and pythonw is None:
+        return f'"{sys.executable}" "%1"'
     return f'"{pythonw or default_pythonw()}" "{script}" "%1"'
 
 
@@ -173,8 +178,11 @@ def make_shortcut(path: Path | None = None, pythonw: str | None = None, script: 
     path = path or shortcut_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     # Values go in through environment variables, so no path is ever pasted into the script text.
-    env = dict(os.environ, PG_LNK=str(path), PG_EXE=pythonw or default_pythonw(), PG_ARGS=f'"{script}" --dashboard',
-               PG_DIR=str(ROOT))
+    if FROZEN and pythonw is None:      # PhishGuard.exe with no arguments opens the dashboard
+        exe, args, workdir = sys.executable, "", str(Path(sys.executable).parent)
+    else:
+        exe, args, workdir = pythonw or default_pythonw(), f'"{script}" --dashboard', str(ROOT)
+    env = dict(os.environ, PG_LNK=str(path), PG_EXE=exe, PG_ARGS=args, PG_DIR=workdir)
     ps = ("$s = (New-Object -ComObject WScript.Shell).CreateShortcut($env:PG_LNK); "
           "$s.TargetPath = $env:PG_EXE; $s.Arguments = $env:PG_ARGS; $s.WorkingDirectory = $env:PG_DIR; "
           "$s.Description = 'Open the PhishGuard dashboard'; $s.Save()")

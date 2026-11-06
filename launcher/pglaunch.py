@@ -138,7 +138,12 @@ def start_server(cfg: dict, popen=subprocess.Popen, env=os.environ) -> None:
     child_env = dict(env)
     child_env["PHISHGUARD_INSTANCE"] = str(cfg["instance"])
     child_env["PHISHGUARD_PORT"] = str(cfg["port"])
-    proc = popen([python, str(ROOT / "run.py")], cwd=str(ROOT), env=child_env, stdout=out, stderr=out,
+    if getattr(sys, "frozen", False):      # the installed app: the engine is PhishGuardEngine.exe next to us
+        here = Path(sys.executable).parent
+        cmd, cwd = [str(here / "PhishGuardEngine.exe")], str(here)
+    else:
+        cmd, cwd = [python, str(ROOT / "run.py")], str(ROOT)
+    proc = popen(cmd, cwd=cwd, env=child_env, stdout=out, stderr=out,
                  stdin=subprocess.DEVNULL, creationflags=flags, close_fds=True)
     (cfg["instance"] / "server.pid").write_text(str(proc.pid), encoding="utf-8")
 
@@ -216,6 +221,14 @@ def open_window(check_url: str, cfg: dict, popen=subprocess.Popen) -> None:
     open_in_browser(exe, check_url, popen)
 
 
+def emit(text: str, out, cfg: dict) -> None:
+    """--no-window (tests): print the address. The installed app has no console, so it goes to the log."""
+    if out is not None:
+        print(text, file=out)
+    else:
+        log(cfg, f"address: {text}")
+
+
 # --- main -------------------------------------------------------------------------------------
 
 def main(argv: list[str], env=os.environ, popen=subprocess.Popen, alert=message_box, window=open_window,
@@ -230,7 +243,7 @@ def main(argv: list[str], env=os.environ, popen=subprocess.Popen, alert=message_
             ensure_server(cfg, popen=popen, env=env)
             target = dashboard_url(cfg)
             if no_window:
-                print(target, file=out)
+                emit(target, out, cfg)
             else:
                 window(target, cfg)
             return 0
@@ -252,7 +265,7 @@ def main(argv: list[str], env=os.environ, popen=subprocess.Popen, alert=message_
         check_url = f"{cfg['base']}/check/{int(scan['id'])}?t={scan['ticket']}"
         log(cfg, f"check #{scan['id']}: {host}")
         if no_window:
-            print(check_url, file=out)
+            emit(check_url, out, cfg)
         else:
             window(check_url, cfg)
         return 0

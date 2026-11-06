@@ -5,3 +5,8 @@ instance/
 .pytest_cache/
 guard_work/
 instance-demo/
+
+# Installer builds
+build/
+build-log.txt
+build-iss.txt
