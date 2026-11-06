@@ -175,18 +175,37 @@ def chosen(scheme: str, base: str = "Software") -> str | None:
     return _read(rf"{root}\UserChoiceLatest\ProgId", "ProgId") or _read(rf"{root}\UserChoice", "ProgId")
 
 
-def is_default(base: str = "Software") -> bool:
-    """True when Windows hands both http and https links to PhishGuard."""
+def chosen_by_user(base: str = "Software") -> bool:
+    """True when the user picked PhishGuard for web links in Windows Settings (the choice alone)."""
     return all(chosen(s, base) == PROGID for s in ("http", "https"))
 
 
-def repair(base: str = "Software") -> bool:
-    """If PhishGuard is registered but its link command is out of date (an older build pointed it
-    at the engine, or the app moved), write it again. Returns True when something was fixed."""
-    if not (FROZEN and is_registered(base)):
+def link_command(base: str = "Software") -> str | None:
+    return _read(rf"{keys(base)['progid']}\shell\open\command", "")
+
+
+def is_default(base: str = "Software") -> bool:
+    """True when links really reach PhishGuard: Windows hands http and https to it AND its link
+    command exists. The choice can outlive the registration (an uninstall removes our keys but
+    Windows keeps the choice); then Windows asks "Select an app" and nothing reaches PhishGuard."""
+    return chosen_by_user(base) and bool(link_command(base))
+
+
+def repair(base: str = "Software", restore: bool = True) -> bool:
+    """Make links reach the installed app again. Fixes two things, and only for the installed app:
+      - the registration is there but its command is out of date (an older build pointed it at the
+        engine, or the app moved);
+      - the registration is gone but the user had chosen PhishGuard in Windows Settings (a reinstall
+        or an uninstall removed our keys): the choice is the user's, so we restore what it needs.
+    Never registers PhishGuard for someone who did not choose it, nor (restore=False) for someone
+    who pressed "Stop using PhishGuard for links". Returns True when something was fixed."""
+    if not FROZEN:
         return False
-    if _read(rf"{keys(base)['progid']}\shell\open\command", "") == command():
-        return False
+    registered = is_registered(base)
+    if registered and link_command(base) == command():
+        return False                                  # all in order
+    if not registered and not (restore and chosen_by_user(base)):
+        return False                                  # never chosen, or switched off: leave Windows alone
     register(base)
     return True
 

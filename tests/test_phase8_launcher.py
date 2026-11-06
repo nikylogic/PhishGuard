@@ -316,17 +316,17 @@ def test_default_is_read_from_the_newer_windows_11_key(reg_base):
     """Newer Windows 11 keeps the choice under UserChoiceLatest\ProgId and leaves UserChoice stale
     (seen on a real PC: UserChoice said Edge while links went to PhishGuard)."""
     _choose(reg_base, "http", "MSEdgeHTM", latest=False)
-    assert not registry.is_default(reg_base)
+    assert not registry.chosen_by_user(reg_base)
     for scheme in ("http", "https"):
         _choose(reg_base, scheme, "PhishGuardURL", latest=True)
     assert registry.chosen("http", reg_base) == "PhishGuardURL"
-    assert registry.is_default(reg_base)
+    assert registry.chosen_by_user(reg_base)
 
 
 def test_old_windows_choice_still_counts(reg_base):
     for scheme in ("http", "https"):
         _choose(reg_base, scheme, "PhishGuardURL", latest=False)
-    assert registry.is_default(reg_base)
+    assert registry.chosen_by_user(reg_base)
 
 
 def test_installed_app_sends_links_to_phishguard_exe_not_the_engine(reg_base, monkeypatch):
@@ -351,3 +351,43 @@ def test_repair_does_nothing_when_not_registered(reg_base, monkeypatch):
     monkeypatch.setattr(registry, "FROZEN", True)
     assert registry.repair(reg_base) is False
     assert registry.dump(reg_base) == []
+
+
+def test_default_needs_the_registration_not_just_the_choice(reg_base):
+    """Seen on a real PC after a reinstall: Windows still chose PhishGuardURL, but our keys were
+    gone, so Windows asked "Select an app" while Settings claimed PhishGuard was the default."""
+    for scheme in ("http", "https"):
+        _choose(reg_base, scheme, "PhishGuardURL", latest=True)
+    assert registry.chosen_by_user(reg_base)
+    assert not registry.is_default(reg_base)
+    registry.register(reg_base)
+    assert registry.is_default(reg_base)
+
+
+def test_repair_restores_a_missing_registration_the_user_had_chosen(reg_base, monkeypatch):
+    monkeypatch.setattr(registry, "FROZEN", True)
+    monkeypatch.setattr(registry.sys, "executable", r"C:\Apps\PhishGuard\PhishGuard.exe")
+    for scheme in ("http", "https"):
+        _choose(reg_base, scheme, "PhishGuardURL", latest=True)
+    assert registry.repair(reg_base) is True
+    assert registry.is_default(reg_base)
+    assert read(rf"{registry.keys(reg_base)['progid']}\shell\open\command") == r'"C:\Apps\PhishGuard\PhishGuard.exe" "%1"'
+    assert registry.repair(reg_base) is False                  # nothing left to fix
+
+
+def test_repair_never_registers_for_someone_who_chose_another_browser(reg_base, monkeypatch):
+    monkeypatch.setattr(registry, "FROZEN", True)
+    for scheme in ("http", "https"):
+        _choose(reg_base, scheme, "ChromeHTML", latest=True)
+    assert registry.repair(reg_base) is False
+    assert not registry.is_registered(reg_base)
+
+
+def test_repair_respects_stop_using_phishguard(reg_base, monkeypatch):
+    """After "Stop using PhishGuard for links" (links.off), a choice left behind in Windows is not
+    a reason to register again."""
+    monkeypatch.setattr(registry, "FROZEN", True)
+    for scheme in ("http", "https"):
+        _choose(reg_base, scheme, "PhishGuardURL", latest=True)
+    assert registry.repair(reg_base, restore=False) is False
+    assert not registry.is_registered(reg_base)

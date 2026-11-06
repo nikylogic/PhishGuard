@@ -60,7 +60,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     try:                                              # fix a link command left by an older build
         import registry                               # noqa: PLC0415
-        registry.repair()
+        registry.repair(restore=not (instance / "links.off").exists())
         registry.repair_startup()
         first_run_startup(instance, registry)
     except Exception:                                 # noqa: BLE001  never block opening a link

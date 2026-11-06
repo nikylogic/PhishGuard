@@ -10,7 +10,7 @@ A free, open-source link airlock for Windows. Click a link in any app (Discord, 
 
 [![Windows 11](https://img.shields.io/badge/Windows-11-0078D4?logo=windows&logoColor=white)](#install)
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](#build-from-source)
-[![Tests](https://img.shields.io/badge/tests-489%20passing-2ea44f)](#tested-on-real-phishing)
+[![Tests](https://img.shields.io/badge/tests-494%20passing-2ea44f)](#tested-on-real-phishing)
 [![Runs locally](https://img.shields.io/badge/runs-100%25%20on%20your%20PC-555)](#privacy)
 [![Cost](https://img.shields.io/badge/cost-free-2ea44f)](#install)
 

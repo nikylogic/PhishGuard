@@ -318,3 +318,14 @@ def test_only_admins_can_touch_windows(app, opened):
     assert post(fresh(app), "/api/windows/default").status_code == 401
     assert c.post("/api/windows/default").status_code == 403                        # no CSRF token
     assert opened == []
+
+
+def test_stop_and_make_default_record_the_users_choice(app):
+    c = personal(app)
+    inst = Path(app.config["INSTANCE_DIR"])
+    post(c, "/api/windows/default")
+    assert not (inst / "links.off").exists()
+    post(c, "/api/windows/remove")
+    assert (inst / "links.off").exists()
+    post(c, "/api/windows/default")
+    assert not (inst / "links.off").exists()

@@ -65,10 +65,17 @@ def set_startup(on: bool) -> dict:
     return status()
 
 
+def _links_off() -> Path:
+    """Written when the user presses "Stop using PhishGuard for links", so the app never quietly
+    registers itself again (registry.repair) until they press "Make default" themselves."""
+    return Path(current_app.config["INSTANCE_DIR"]) / "links.off"
+
+
 def make_default() -> dict:
     reg = registry()
     if not reg:
         raise RuntimeError("This only works on Windows.")
+    _links_off().unlink(missing_ok=True)
     reg.register(current_app.config["REGISTRY_BASE"])
     reg.make_shortcut(_shortcut())
     _open_settings(reg.SETTINGS_PAGE)
@@ -80,6 +87,7 @@ def remove() -> dict:
     if not reg:
         raise RuntimeError("This only works on Windows.")
     reg.unregister(current_app.config["REGISTRY_BASE"])
+    _links_off().write_text("PhishGuard was switched off for links in Settings.\n", encoding="utf-8")
     reg.remove_shortcut(_shortcut())
     _open_settings(reg.SETTINGS_LIST)    # so the user can pick their old browser again
     return status()
