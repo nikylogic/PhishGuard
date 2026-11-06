@@ -208,7 +208,8 @@ MATRIX = [
     ("Normal page", "plain.test", "/plain", "clear", None),
     ("Fake bank login", "bank.test", "/bank", "danger", "phishing"),
     ("invoice.pdf.exe download", "files.test", "/invoice", "danger", "malware"),
-    ("Fingerprinting page", "plain.test", "/fingerprint", "caution", "tracking"),
+    # Tracking alone is a privacy note, not a danger (big sites like x.com all fingerprint).
+    ("Fingerprinting page", "plain.test", "/fingerprint", "clear", None),
     ("IP-logger link", "short.test", "/go", "danger", "tracking"),
     ("ClickFix fake CAPTCHA", "evil.test", "/clickfix", "danger", "abuse"),
     ("ms-msdt launcher", "evil.test", "/msdt", "danger", "abuse"),
@@ -252,6 +253,8 @@ def test_end_to_end_verdict(worker, name, host, path, level, lead):
     assert v["level"] == level, (v["subs"], [(f.code, f.weight) for f in v["findings"]])
     if lead:
         assert v["subs"][lead] == v["score"], v["subs"]
+    if name == "Fingerprinting page":          # still reported in full, just not counted as danger
+        assert v["subs"]["tracking"] > 0 and "FINGERPRINT" not in v["counted"]
     # Regression: Playwright's own eval calls once made busy pages look "obfuscated".
     if name in ("Fingerprinting page", "Fake virus alert", "Normal page"):
         assert "OBFUSCATED" not in {f.code for f in v["findings"]}

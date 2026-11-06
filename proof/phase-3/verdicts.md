@@ -5,7 +5,7 @@
 | Normal page | 0 | 0 | 0 | 0 | **CLEAR** | - |
 | Fake bank login | 95 | 0 | 0 | 0 | **DANGER** | This page asks for a password on an unencrypted (http) connection.<br>This page asks for your password but sends it to another website (collect.test).<br>This page looks like a HDFC Bank login, but it is not on HDFC Bank's website. |
 | invoice.pdf.exe download | 10 | 100 | 0 | 0 | **DANGER** | The page tried to download a program or script (invoice.pdf.exe).<br>The download is disguised: 'invoice.pdf.exe' is really a windows program.<br>The page started a download by itself, without any click. |
-| Fingerprinting page | 0 | 0 | 40 | 0 | **CAUTION** | The page fingerprints your device (audio, canvas, fonts, hardware, webgl).<br>The page opened a WebRTC connection, which can reveal your local IP address. |
+| Fingerprinting page | 0 | 0 | 40 | 0 | **CLEAR** | The page fingerprints your device (audio, canvas, fonts, hardware, webgl).<br>The page opened a WebRTC connection, which can reveal your local IP address. |
 | IP-logger link | 10 | 0 | 60 | 0 | **DANGER** | This is an IP-logger link: opening it records your IP address and device.<br>The link bounced through 1 hop(s) and ended on a different website (grabify.link). |
 | ClickFix fake CAPTCHA | 0 | 0 | 0 | 70 | **DANGER** | The page secretly copied a command to your clipboard and wants you to run it. |
 | ms-msdt launcher | 0 | 0 | 0 | 60 | **DANGER** | The page tried to launch a Windows app through a 'ms-msdt:' link. |

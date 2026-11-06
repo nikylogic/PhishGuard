@@ -173,7 +173,27 @@ def level_for(score: int) -> str:
     return "clear"
 
 
+# What decides the verdict. Following Google Safe Browsing, a page is dangerous when it deceives
+# you (phishing, scams), harms your device (malware) or abuses your browser. Tracking is a privacy
+# matter: it is shown in full but never makes a link look dangerous, because nearly every big site
+# fingerprints and tracks. The exception is an IP logger, whose only purpose is to unmask whoever
+# clicks. Weak signals that are also common on big, honest sites (scrambled code, long links)
+# only add to a verdict that something stronger already started (corroboration).
+THREAT_TRACKING = frozenset({"IP_LOGGER", "IP_LOGGER_HOP"})
+SUPPORTING = frozenset({"OBFUSCATED", "LONG_URL", "MANY_HYPHENS", "REDIRECT_PARAM"})
+
+
+def role(x: Finding) -> str:
+    """'threat' (decides the verdict), 'supporting' (only adds to a threat) or 'privacy' (shown only)."""
+    if x.category == "tracking" and x.code not in THREAT_TRACKING:
+        return "privacy"
+    return "supporting" if x.code in SUPPORTING else "threat"
+
+
 def verdict(findings) -> dict:
-    subs = sub_scores(findings)
-    score = max(subs.values())
-    return {"score": score, "level": level_for(score), "subs": subs}
+    subs = sub_scores(findings)          # every finding, for the breakdown bars
+    threats = [x for x in findings if role(x) == "threat"]
+    counted = [*threats, *(x for x in findings if role(x) == "supporting")] if threats else []
+    score = max(sub_scores(counted).values())
+    return {"score": score, "level": level_for(score), "subs": subs,
+            "counted": sorted({x.code for x in counted})}

@@ -37,7 +37,14 @@ import { GAUGES, VerdictBadge } from "@/components/verdict"
 import { api, ApiError, band, errText, TONE, urlParts, type Level } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
-type Finding = { code: string; message: string; weight: number; category: string }
+type Finding = {
+  code: string
+  message: string
+  weight: number
+  category: string
+  role?: "threat" | "supporting" | "privacy"
+  counted?: boolean
+}
 type Scan = {
   id: number
   url: string
@@ -149,7 +156,11 @@ export function Airlock({ sid }: { sid: number }) {
   }
 
   const [pre, main, rest] = d ? urlParts(d.url, d.domain) : ["", "loading…", ""]
-  const reasons = (d?.findings ?? []).filter((f) => f.weight > 0).slice(0, 7)
+  // What decided the verdict, and what is only a privacy note (tracking, or weak signals with no threat).
+  const shown = (d?.findings ?? []).filter((f) => f.weight > 0)
+  const reasons = shown.filter((f) => f.counted !== false).slice(0, 7)
+  const notes = shown.filter((f) => f.counted === false).slice(0, 5)
+  const trackingCounts = shown.some((f) => f.category === "tracking" && f.counted !== false)
   const danger = level === "danger"
   const removed = d?.params_removed?.length ?? 0
   const timing = d?.page?.timings?.total as number | undefined
@@ -255,7 +266,13 @@ export function Airlock({ sid }: { sid: number }) {
                       aria-labelledby={`g-${key}`}
                       value={v}
                       className="h-2"
-                      indicatorClassName={busy ? "animate-pulse bg-muted-foreground/40" : TONE[band(v)].bg}
+                      indicatorClassName={
+                        busy
+                          ? "animate-pulse bg-muted-foreground/40"
+                          : key === "s_tracking" && !trackingCounts
+                            ? "bg-muted-foreground/50"
+                            : TONE[band(v)].bg
+                      }
                     />
                   </div>
                 )
@@ -285,6 +302,22 @@ export function Airlock({ sid }: { sid: number }) {
                 )}
               </ul>
             </div>
+            {!busy && notes.length > 0 && (
+              <div className="grid gap-2">
+                <h2 className="text-sm font-medium">Privacy</h2>
+                <p className="text-sm text-muted-foreground">
+                  Common on big websites. Shown for your information; it does not make the link unsafe.
+                </p>
+                <ul className="grid gap-2 text-sm text-muted-foreground">
+                  {notes.map((f) => (
+                    <li key={f.code + f.message} className="flex gap-2.5">
+                      <span aria-hidden className="mt-1.5 size-2 shrink-0 rounded-full bg-muted-foreground/40" />
+                      <span>{f.message}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </CardContent>
           <CardFooter className="flex-col items-stretch gap-2">
             {danger ? (

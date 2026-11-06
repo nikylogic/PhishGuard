@@ -22,7 +22,7 @@ from . import pagerules  # noqa: F401 - registers the page rules
 from .intel import Intel
 from .llm import Reviewer, apply_opinion, provider_from_settings
 from .pagerules import analyse
-from .rules import Finding, make, url_findings, verdict
+from .rules import Finding, make, role, url_findings, verdict
 from .sandbox import Capture
 from .urltools import UnsafeURL, domain_matches, parse
 
@@ -297,6 +297,13 @@ def scan_row(con, sid: int) -> dict | None:
     d = dict(r)
     d["findings"] = [dict(f) for f in con.execute(
         "SELECT stage, category, code, weight, message FROM findings WHERE scan_id = ? ORDER BY weight DESC", (sid,))]
+    # Which findings decided the verdict. Tracking is shown as privacy; weak signals count only
+    # next to a real threat (see rules.verdict).
+    roles = [role(Finding(f["code"], f["category"], f["weight"], f["message"], f["stage"])) for f in d["findings"]]
+    threat = any(r == "threat" and f["weight"] > 0 for r, f in zip(roles, d["findings"]))
+    for r, f in zip(roles, d["findings"]):
+        f["role"] = r
+        f["counted"] = r == "threat" or (r == "supporting" and threat)
     d["redirects"] = json.loads(d.pop("redirect_json") or "[]")
     d["page"] = json.loads(d.pop("page_json") or "{}")
     d["llm"] = json.loads(d.pop("llm_json") or "null")
