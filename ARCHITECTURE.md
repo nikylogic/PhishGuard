@@ -32,7 +32,7 @@ PhishGuard covers four families of attack that arrive through a link. Each one g
 | **4. Scams and browser abuse** | **ClickFix / fake CAPTCHA** (the page copies a PowerShell command to your clipboard and tells you to press Win+R), fake "your PC is infected" or "update your browser" pages, notification-permission spam, launching dangerous Windows protocols (`ms-msdt:`, `search-ms:`, `ms-officecmd:`), crypto-mining scripts, heavily obfuscated JavaScript, open-redirect abuse (a trusted site bouncing you to an untrusted one) | Hooks on clipboard writes, permission requests and fullscreen calls. Every navigation to a non-http(s) scheme is **blocked and reported**. A list of known miner domains plus WebAssembly detection. An obfuscation check on scripts (eval/atob use, long base64 strings, entropy). A redirect-chain check for a trusted domain handing off to an untrusted one. |
 
 **Honest limits (to state in the report and viva):**
-- **Opening the link at all reveals your IP address.** The sandbox runs on your own computer, so an IP logger still sees your IP when PhishGuard opens the link. Fingerprinting only ever sees the throwaway sandbox browser, never your real browser profile. To hide the IP as well, the sandbox can send its traffic through a proxy (*Privacy mode*: any SOCKS/HTTP proxy, e.g. a local Tor client). This is optional and off by default.
+- **Opening the link at all reveals your IP address.** The sandbox runs on your own computer, so an IP logger still sees your IP when PhishGuard opens the link. Fingerprinting only ever sees the throwaway sandbox browser, never your real browser profile. Hiding the IP as well (*Privacy mode*: sending the gatekeeper's traffic on through Tor or another proxy) is listed as a Future Enhancement.
 - **PhishGuard is not an antivirus and cannot detect brand-new browser exploits ("zero-days").** Its protection is isolation: the page runs in a separate, throwaway Chrome sandbox, never in your real browser. Full VM-level isolation is a Future Enhancement.
 - **One-time links** (password resets, magic login links) can be "used up" by the sandbox visit. Domains on the allowlist skip the sandbox, and every Link Check page also has an *Open directly* button.
 
@@ -114,12 +114,14 @@ PhishGuard covers four families of attack that arrive through a link. Each one g
   - downloads are **caught into `instance/quarantine/<scan_id>/`, renamed to `.bin`, never opened**, with a 25 MB limit; each file is hashed and its type identified
   - an init script, injected before any page script runs, hooks fingerprinting, clipboard, permission, fullscreen, WebRTC and WebAssembly APIs and reports each call
   - navigation to any non-http(s) scheme is aborted and logged
-  - optional proxy for Privacy mode
   - no permissions (camera, location, notifications)
   - service workers blocked
   - a 1366×768 viewport and a normal user agent
-- **Request filter (prevents SSRF):** every request, including redirects and sub-resources, is checked. Its host is resolved, and requests to private, loopback, link-local or metadata IPs are aborted. A phishing link can't use PhishGuard to reach your router or PhishGuard's own admin page.
-- **Limits:** 15 s for navigation, 20 s per scan, at most 10 redirects, and response bodies over 5 MB are aborted.
+- **Egress gatekeeper (prevents SSRF), in `egress.py`:**
+  - The sandbox browser sends **every** connection (pages, every redirect hop, images, scripts, WebSockets, iframes) through a tiny local proxy owned by PhishGuard. Chrome's built-in "always allow localhost" exception is removed (`<-loopback>`), so loopback traffic goes through the gatekeeper too.
+  - The gatekeeper resolves the name itself and refuses private, loopback, link-local and cloud-metadata addresses. It then connects to **the exact IP it checked**, so DNS rebinding cannot swap the address in between.
+  - *Why not a browser request filter?* Phase 2 testing showed that Playwright's request routing does not see the later hops of a redirect chain. A redirect to `127.0.0.1` slipped past it, so the design was changed to a proxy.
+- **Limits:** 15 s for navigation (after which the load is stopped), 20 s per scan, and 25 MB per quarantined download.
 - **What it records:**
   - the redirect chain (each hop with its status code)
   - the final URL and the page title
@@ -318,7 +320,7 @@ There is no ORM; `sqlite3` with plain parameterised SQL is enough. There is no f
 | A website calls `127.0.0.1:5157/api/scan` from your browser (CSRF or drive-by) | The API needs the launcher token or a logged-in session with a CSRF token. The token is checked with a constant-time compare. Host header must be `127.0.0.1` or `localhost` (blocks DNS rebinding). |
 | Someone on the network reaches the app | The server binds to 127.0.0.1 only. |
 | A phishing page attacks your browser through PhishGuard | Its HTML is never rendered in your browser. You only see a JPEG and escaped text. Jinja autoescape is on and CSP is `default-src 'self'`. |
-| SSRF to the LAN or localhost through the sandbox | Every request and redirect is resolved and filtered (section 3.4). |
+| SSRF to the LAN or localhost through the sandbox | Every connection goes through the egress gatekeeper, which resolves, checks and pins the IP (section 3.4). |
 | Malware downloads | Downloads are disabled in the sandbox context. |
 | A scan leaves cookies or state behind | A new incognito context per scan, closed afterwards. |
 | Prompt injection against the LLM | AI Guard warning, untrusted-data delimiters, the LLM can only raise the score, and the JSON output is checked against a schema. |
