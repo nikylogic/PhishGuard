@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Settings · PhishGuard{% endblock %}
+{% block content %}
+<div class="page-head"><div><div class="eyebrow">Admin only</div><h1>Settings</h1></div></div>
+<div class="tabs" role="tablist">
+  <button role="tab" aria-selected="true" data-tab="general">General</button>
+  <button role="tab" aria-selected="false" data-tab="users">Users</button>
+  <button role="tab" aria-selected="false" data-tab="audit">Audit log</button>
+</div>
+
+<div class="tab-panel" id="tab-general" role="tabpanel">
+  <div class="grid-2">
+    <form class="card pad" id="browser-form">
+      <h2>Your real browser</h2>
+      <p class="muted">Safe links are handed to this browser. PhishGuard starts it directly, so links never loop back into PhishGuard.</p>
+      <label class="field" for="browser">Browser
+        <select id="browser"></select></label>
+      <div class="row"><button class="btn primary" type="submit">Save</button></div>
+    </form>
+    <form class="card pad" id="llm-form">
+      <h2>AI second opinion</h2>
+      <p class="muted">Optional. An AI model reads the page and may raise the risk. It can never lower it.</p>
+      <label class="field" for="provider">Provider
+        <select id="provider">
+          <option value="none">Off</option><option value="gemini">Google Gemini (free tier)</option>
+          <option value="groq">Groq (free tier)</option><option value="ollama">Ollama (offline, on this PC)</option>
+        </select></label>
+      <label class="field" for="model">Model name (optional)
+        <input class="input mono" id="model" placeholder="leave empty for the default"></label>
+      <label class="field" for="key">API key
+        <input class="input mono" id="key" type="password" autocomplete="off" placeholder="not needed for Ollama"></label>
+      <div class="row"><button class="btn primary" type="submit">Save</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="tab-panel" id="tab-users" role="tabpanel" hidden>
+  <div class="grid-2">
+    <section class="card pad"><h2>People</h2><table class="list"><tbody id="users"></tbody></table></section>
+    <form class="card pad" id="user-form">
+      <h2>Add a person</h2>
+      <label class="field" for="u-name">Username <input class="input" id="u-name" required autocomplete="off"></label>
+      <label class="field" for="u-pw">Password (8+ characters) <input class="input" id="u-pw" type="password" required autocomplete="new-password"></label>
+      <label class="field" for="u-role">Role
+        <select id="u-role"><option value="analyst">Analyst: scans and lists</option><option value="admin">Admin: everything</option></select></label>
+      <div class="row"><button class="btn primary" type="submit">Add</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="tab-panel" id="tab-audit" role="tabpanel" hidden>
+  <div class="card"><table class="list">
+    <thead><tr><th>When</th><th>Who</th><th>What</th><th>Details</th></tr></thead>
+    <tbody id="audit"></tbody></table></div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='settings.js') }}"></script>{% endblock %}

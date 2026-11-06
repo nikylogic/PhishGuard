@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Home · PhishGuard{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="inspect">
+    <div class="eyebrow">Your airlock</div>
+    <h1 id="summary">Every link waits here <em>before</em> it reaches you.</h1>
+    <form id="inspect" class="row" autocomplete="off">
+      <label class="sr-only" for="url">Link to inspect</label>
+      <input class="input mono" id="url" name="url" placeholder="Paste a link to inspect…" required>
+      <button class="btn primary" type="submit">Inspect</button>
+    </form>
+    <p class="muted" id="inspect-msg">Links you click in other apps come here by themselves.</p>
+  </div>
+  <div class="card tally" aria-label="Today">
+    <div><b id="t-today">0</b><span>links checked today</span></div>
+    <div><b id="t-stopped">0</b><span>stopped as dangerous</span></div>
+    <div><b id="t-trackers">0</b><span>trackers spotted</span></div>
+  </div>
+</section>
+
+<div class="section-title"><h2>Recently in the airlock</h2><a class="muted" href="{{ url_for('views.history') }}">See all</a></div>
+<div class="recent" id="recent"><div class="empty">No links yet. Paste one above to see the airlock at work.</div></div>
+
+<div class="grid-2">
+  <section>
+    <div class="section-title"><h2>This week</h2>
+      <div class="legend"><span class="clear">Clear</span><span class="caution">Caution</span><span class="danger">Danger</span></div>
+    </div>
+    <div class="card pad"><div class="week" id="week" aria-label="Links checked per day this week"></div></div>
+  </section>
+  <section>
+    <div class="section-title"><h2>Most stopped</h2></div>
+    <div class="card pad" id="top"><p class="muted">Nothing dangerous yet.</p></div>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='home.js') }}"></script>{% endblock %}

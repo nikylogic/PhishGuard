@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}History · PhishGuard{% endblock %}
+{% block content %}
+<div class="page-head"><div><div class="eyebrow">Everything that passed through</div><h1>History</h1></div></div>
+<div class="toolbar">
+  <label class="sr-only" for="q">Search</label>
+  <input class="input" id="q" placeholder="Search links or page titles">
+  <label class="sr-only" for="level">Verdict</label>
+  <select id="level"><option value="">All verdicts</option><option value="danger">Danger</option><option value="caution">Caution</option><option value="clear">Clear</option></select>
+</div>
+<div class="card">
+  <table class="list">
+    <thead><tr><th>Verdict</th><th>Link</th><th>Four gauges</th><th>Decision</th><th>When</th></tr></thead>
+    <tbody id="rows"><tr><td colspan="5" class="empty">Loading…</td></tr></tbody>
+  </table>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='history.js') }}"></script>{% endblock %}

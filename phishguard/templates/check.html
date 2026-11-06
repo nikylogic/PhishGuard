@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Airlock · PhishGuard{% endblock %}
+{% macro body() %}
+<div id="airlock" data-sid="{{ sid }}">
+  <div class="page-head">
+    <div>
+      <div class="eyebrow">Airlock · check #{{ sid }}</div>
+      <h1 id="headline">Inspecting the link…</h1>
+    </div>
+    {% if standalone %}<img class="brand-mark" src="{{ url_for('static', filename='mark.svg') }}" alt="PhishGuard">{% endif %}
+  </div>
+
+  <div class="tag" aria-label="The link you clicked">
+    <span class="tag-url" id="tag-url"><span class="muted">loading…</span></span>
+    <button class="btn" type="button" id="copy">Copy link</button>
+  </div>
+
+  <div class="airlock">
+    <section class="case" aria-label="What the page looked like inside the sandbox">
+      <div class="case-label">
+        <span><span class="dot"></span>Seen inside the sandbox, not on your computer</span>
+        <span id="timing"></span>
+      </div>
+      <div class="glass" id="glass">
+        <div class="placeholder" id="placeholder">Opening the page in a sealed, throwaway browser…</div>
+        <div class="sweep" id="sweep"></div>
+      </div>
+    </section>
+
+    <section class="verdict card pad" aria-live="polite">
+      <div class="stamp-wrap">
+        <div class="stamp" id="stamp">…</div>
+        <div class="score-big"><span id="score">–</span><small>risk out of 100</small></div>
+      </div>
+      <div class="gauges" id="gauges"></div>
+      <div>
+        <h3>Why</h3>
+        <ul class="reasons" id="reasons"><li>Waiting for the sandbox…</li></ul>
+      </div>
+      <div class="actions" id="actions">
+        <button class="btn primary big" type="button" id="open" disabled>Open safely</button>
+        <div class="confirm" id="confirm" role="alert">
+          <span>This link is marked <b>DANGER</b>. Opening it may put your accounts or computer at risk.</span>
+          <div class="row">
+            <button class="btn danger" type="button" id="confirm-yes">Open anyway</button>
+            <button class="btn" type="button" id="confirm-no">Keep it locked</button>
+          </div>
+        </div>
+        <div class="secondary">
+          <button class="btn" type="button" id="open-clean" disabled>Open clean link</button>
+          <button class="btn" type="button" id="block" disabled>Block this site</button>
+          <button class="btn" type="button" id="open-direct" title="For one-time links like password resets">Open directly</button>
+        </div>
+        <p class="muted" id="clean-note" hidden></p>
+      </div>
+    </section>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="journey">Journey</button>
+    <button role="tab" aria-selected="false" data-tab="privacy">Privacy report</button>
+    <button role="tab" aria-selected="false" data-tab="files">Downloads</button>
+    <button role="tab" aria-selected="false" data-tab="ai">AI Guard</button>
+    <button role="tab" aria-selected="false" data-tab="tech">Technical</button>
+  </div>
+  <div class="tab-panel" id="tab-journey" role="tabpanel"></div>
+  <div class="tab-panel" id="tab-privacy" role="tabpanel" hidden></div>
+  <div class="tab-panel" id="tab-files" role="tabpanel" hidden></div>
+  <div class="tab-panel" id="tab-ai" role="tabpanel" hidden></div>
+  <div class="tab-panel" id="tab-tech" role="tabpanel" hidden></div>
+</div>
+{% endmacro %}
+{% block content %}{{ body() }}{% endblock %}
+{% block standalone %}{{ body() }}{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='airlock.js') }}"></script>{% endblock %}

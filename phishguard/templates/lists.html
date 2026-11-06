@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Trusted & blocked · PhishGuard{% endblock %}
+{% block content %}
+<div class="page-head"><div><div class="eyebrow">Your own rules</div><h1>Trusted &amp; blocked</h1></div></div>
+<div class="grid-2">
+  <section class="card pad">
+    <h2>Trusted</h2>
+    <p class="muted">Links to these sites skip the airlock and open straight away.</p>
+    <form class="row" id="add-allow"><label class="sr-only" for="allow-dom">Trusted site</label>
+      <input class="input mono" id="allow-dom" placeholder="e.g. wikipedia.org" required><button class="btn" type="submit">Add</button></form>
+    <table class="list"><tbody id="allow"></tbody></table>
+  </section>
+  <section class="card pad">
+    <h2>Blocked</h2>
+    <p class="muted">Links to these sites are stopped at once. They are never opened, not even in the sandbox.</p>
+    <form class="row" id="add-block"><label class="sr-only" for="block-dom">Blocked site</label>
+      <input class="input mono" id="block-dom" placeholder="e.g. paypa1-secure.top" required><button class="btn" type="submit">Add</button></form>
+    <table class="list"><tbody id="block"></tbody></table>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='lists.js') }}"></script>{% endblock %}

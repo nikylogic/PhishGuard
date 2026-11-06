@@ -82,7 +82,7 @@ def test_security_headers_present(client):
     assert "frame-ancestors 'none'" in h["Content-Security-Policy"]
     assert h["X-Content-Type-Options"] == "nosniff"
     assert h["X-Frame-Options"] == "DENY"
-    assert h["Referrer-Policy"] == "no-referrer"
+    assert h["Referrer-Policy"] == "same-origin"
 
 
 def test_secrets_are_created_once_and_reused(app, tmp_path):

@@ -4,3 +4,4 @@ __pycache__/
 instance/
 .pytest_cache/
 guard_work/
+instance-demo/

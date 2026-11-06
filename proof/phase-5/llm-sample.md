@@ -34,11 +34,11 @@ FACTS (trusted, from the sandbox):
  ]
 }
 
-PAGE TEXT (untrusted) between START_PAGE_TEXT_1e323e5ffe283a31 and END_PAGE_TEXT_1e323e5ffe283a31:
+PAGE TEXT (untrusted) between START_PAGE_TEXT_a8545182b646e84c and END_PAGE_TEXT_a8545182b646e84c:
 
-START_PAGE_TEXT_1e323e5ffe283a31
+START_PAGE_TEXT_a8545182b646e84c
 Log in to PayPal. Your account is limited.
-END_PAGE_TEXT_1e323e5ffe283a31
+END_PAGE_TEXT_a8545182b646e84c
 
 Now reply with the JSON object only.
 ```

@@ -1,0 +1,33 @@
+PhishGuard - Phase 7 test run
+Started : 2026-11-06 15:17:08
+Finished: 2026-11-06 15:17:32
+Python  : 3.12.10 on Windows 11
+Command : pytest -v tests/test_phase7_ui.py
+Exit    : 0
+==============================================================================
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.2.0, pluggy-1.7.0 -- D:\PhishGuard\.venv\Scripts\python.exe
+rootdir: D:\PhishGuard
+plugins: anyio-4.16.0
+collecting ... collected 17 items
+
+tests/test_phase7_ui.py::test_login_wrong_password_shows_error PASSED    [  5%]
+tests/test_phase7_ui.py::test_home_shows_todays_counts_and_recent_checks PASSED [ 11%]
+tests/test_phase7_ui.py::test_airlock_danger_verdict_explains_itself PASSED [ 17%]
+tests/test_phase7_ui.py::test_airlock_shows_hidden_ai_instructions PASSED [ 23%]
+tests/test_phase7_ui.py::test_open_anyway_on_danger_asks_for_confirmation PASSED [ 29%]
+tests/test_phase7_ui.py::test_inspect_from_home_goes_to_airlock PASSED   [ 35%]
+tests/test_phase7_ui.py::test_guard_lab_flags_example_attack PASSED      [ 41%]
+tests/test_phase7_ui.py::test_every_screen_loads_without_console_errors PASSED [ 47%]
+tests/test_phase7_ui.py::test_analyst_cannot_see_or_open_settings PASSED [ 52%]
+tests/test_phase7_ui.py::test_logged_out_user_is_sent_to_login PASSED    [ 58%]
+tests/test_phase7_ui.py::test_images_have_alt_text_and_inputs_have_labels PASSED [ 64%]
+tests/test_phase7_ui.py::test_no_sideways_scrolling[1366-768] PASSED     [ 70%]
+tests/test_phase7_ui.py::test_no_sideways_scrolling[1920-1080] PASSED    [ 76%]
+tests/test_phase7_ui.py::test_no_sideways_scrolling[900-800] PASSED      [ 82%]
+tests/test_phase7_ui.py::test_dark_mode_follows_windows_setting PASSED   [ 88%]
+tests/test_phase7_ui.py::test_text_colours_meet_wcag_aa[light] PASSED    [ 94%]
+tests/test_phase7_ui.py::test_text_colours_meet_wcag_aa[dark] PASSED     [100%]
+
+---------- generated xml file: D:\PhishGuard\proof\phase-7\junit.xml ----------
+============================= 17 passed in 22.90s =============================
