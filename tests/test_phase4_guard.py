@@ -6,7 +6,6 @@ from pathlib import Path
 import pytest
 
 from phishguard.guard.guard import MODEL_PATH, Guard, chunks
-from phishguard.guard.train import load_splits, norm
 
 ROOT = Path(__file__).resolve().parent.parent
 EVAL = ROOT / "proof" / "phase-4" / "eval.json"
@@ -88,6 +87,11 @@ def test_average_latency_under_5ms(guard):
 
 
 def test_test_split_never_overlaps_training():
+    # The training data is downloaded by train.py and not kept in the repo, so CI skips this.
+    pytest.importorskip("pandas")
+    from phishguard.guard.train import RAW, load_splits, norm
+    if not (RAW / "deepset_train.parquet").exists():
+        pytest.skip("training data not downloaded (python -m phishguard.guard.train)")
     train, test, _ = load_splits()
     assert not (set(train["text"].map(norm)) & set(test["text"].map(norm)))
 
