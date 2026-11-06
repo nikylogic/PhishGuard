@@ -6,13 +6,15 @@
 
 **Every link checked in a sandbox before it reaches your browser.**
 
-A free, open-source link airlock for Windows. Click a link in any app (Discord, WhatsApp, Telegram, Outlook, a PDF) and PhishGuard opens it in a hidden, throwaway browser first. It tells you whether the page is a fake bank login, a malware download or a scam, and **you** decide whether to open it.
+A free link airlock for Windows, with its full source code here on GitHub. Click a link in any app (Discord, WhatsApp, Telegram, Outlook, a PDF) and PhishGuard opens it in a hidden, throwaway browser first. It tells you whether the page is a fake bank login, a malware download or a scam, and **you** decide whether to open it.
 
 [![Windows 11](https://img.shields.io/badge/Windows-11-0078D4?logo=windows&logoColor=white)](#install)
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](#build-from-source)
-[![Tests](https://img.shields.io/badge/tests-494%20passing-2ea44f)](#tested-on-real-phishing)
+[![Tests](https://img.shields.io/badge/tests-495%20passing-2ea44f)](#tested-on-real-phishing)
 [![Runs locally](https://img.shields.io/badge/runs-100%25%20on%20your%20PC-555)](#privacy)
-[![Cost](https://img.shields.io/badge/cost-free-2ea44f)](#install)
+[![Cost](https://img.shields.io/badge/cost-free%20for%20personal%20use-2ea44f)](#license)
+[![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial-blue)](LICENSING.md)
+[![CI](https://github.com/nikylogic/PhishGuard/actions/workflows/ci.yml/badge.svg)](https://github.com/nikylogic/PhishGuard/actions/workflows/ci.yml)
 
 [Install](#install) · [How it works](#how-it-works) · [How it spots a fake site](#how-it-spots-a-fake-site) · [Results](#tested-on-real-phishing) · [Screenshots](#screenshots) · [Privacy](#privacy) · [Build](#build-from-source)
 
@@ -194,7 +196,13 @@ Found a vulnerability? Please open a private security advisory on this repositor
 
 ## Contributing
 
-The easiest way to help is to **add a brand**. Each one is a single line in [`phishguard/data/brands.json`](phishguard/data/brands.json): its name, its real domains, and how it is written in web addresses and on pages. Banks, wallets and payment apps from your country are especially welcome. Missed phishing pages and false alarms are just as valuable: open an issue with the link (defanged, e.g. `hxxps://example[.]com`) and what PhishGuard said.
+The easiest way to help is to **add a brand**. Each one is a single entry in [`phishguard/data/brands.json`](phishguard/data/brands.json): its name, its real domains, and how it is written in web addresses and on pages. Banks, wallets and payment apps from your country are especially welcome. Missed phishing pages and false alarms are just as valuable: [open an issue](https://github.com/nikylogic/PhishGuard/issues/new/choose) with the link (defanged, e.g. `hxxps://example[.]com`) and what PhishGuard said.
+
+Code changes are welcome too. [CONTRIBUTING.md](CONTRIBUTING.md) covers setup and tests; every pull request runs the tests on Windows automatically. On your first pull request a bot asks you to sign the [Contributor License Agreement](CLA.md) with a one-line comment. You keep the copyright to your work.
+
+## License
+
+PhishGuard is **free for personal use** and for noncommercial organisations such as schools, charities and public bodies, under the [PolyForm Noncommercial License 1.0.0](LICENSE). Using it in or for a business needs a commercial license; see [LICENSING.md](LICENSING.md). This makes PhishGuard *source-available* rather than OSI open source: anyone can read, build and change the code, and businesses that profit from it help pay for it.
 
 ## Credits
 

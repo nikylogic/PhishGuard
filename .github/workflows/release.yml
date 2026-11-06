@@ -1,0 +1,69 @@
+name: Release
+
+# Push a tag like v1.1.0 to build the installer and publish a GitHub release.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  installer:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Check the tag matches the app version
+        shell: bash
+        run: |
+          app=$(python -c "import re;print(re.search(r'__version__\s*=\s*\"(.+?)\"',open('phishguard/__init__.py').read()).group(1))")
+          if [ "v$app" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match __version__ $app"; exit 1
+          fi
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller==6.22.3
+
+      - name: Test
+        env:
+          PHISHGUARD_NO_DIALOGS: "1"
+          PHISHGUARD_NO_TRAY: "1"
+        run: python -m pytest -q
+
+      - name: Build the dashboard
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build the programs
+        run: pyinstaller --noconfirm --distpath build/dist --workpath build/work packaging/PhishGuard.spec
+
+      - name: Build the installer
+        run: |
+          choco install innosetup -y --no-progress
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" packaging\PhishGuard.iss
+
+      - name: Publish the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd build/installer
+          file="PhishGuard-Setup-${GITHUB_REF_NAME#v}.exe"
+          sha256sum "$file" > "$file.sha256"
+          gh release create "$GITHUB_REF_NAME" "$file" "$file.sha256" \
+            --title "PhishGuard $GITHUB_REF_NAME" --generate-notes

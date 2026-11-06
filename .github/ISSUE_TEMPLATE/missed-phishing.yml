@@ -1,0 +1,45 @@
+name: Missed phishing page
+description: PhishGuard called a phishing or scam page Clear or Caution.
+title: "Missed: "
+labels: ["detection", "missed-phishing"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. Every missed page makes PhishGuard better for everyone.
+        **Defang the link** so nobody opens it by accident: `hxxps://fake-bank[.]top/login`.
+  - type: input
+    id: link
+    attributes:
+      label: The phishing link (defanged)
+      placeholder: hxxps://example[.]com/login
+    validations:
+      required: true
+  - type: input
+    id: pretends
+    attributes:
+      label: What does it pretend to be?
+      placeholder: HDFC Bank login, a parcel delivery fee, a lottery prize…
+    validations:
+      required: true
+  - type: dropdown
+    id: verdict
+    attributes:
+      label: What did PhishGuard say?
+      options: [Clear, Caution, "Could not be checked"]
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: The reasons PhishGuard showed (copy them from the "Why" list)
+  - type: input
+    id: where
+    attributes:
+      label: Where did you get the link?
+      placeholder: SMS, WhatsApp, email, a social media ad…
+  - type: input
+    id: version
+    attributes:
+      label: PhishGuard version (Settings → General, at the bottom)
+      placeholder: "1.1.0"

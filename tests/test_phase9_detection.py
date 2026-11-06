@@ -388,3 +388,10 @@ def test_guard_counts_with_an_explicit_phrase(tmp_path):
 def test_guard_phrases(text, hit):
     from phishguard.guard.guard import PATTERNS
     assert any(p.search(text) for p in PATTERNS) == hit
+
+
+def test_business_copies_leave_out_noncommercial_lists():
+    from phishguard.feeds import SOURCES, sources_for
+    assert sources_for(False) == SOURCES
+    assert "OpenPhish" not in sources_for(True)
+    assert {"phishunt.io", "Phishing.Database"} <= set(sources_for(True))

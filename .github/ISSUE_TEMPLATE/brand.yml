@@ -1,0 +1,31 @@
+name: Add a brand
+description: A bank, wallet, payment app or service that scammers copy and PhishGuard doesn't know yet.
+title: "Brand: "
+labels: ["brand"]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Brand name
+      placeholder: Kotak Mahindra Bank
+    validations:
+      required: true
+  - type: textarea
+    id: domains
+    attributes:
+      label: Its official website addresses (one per line)
+      description: Only addresses the brand itself owns. Check them on the brand's app or official social accounts.
+      placeholder: |
+        kotak.com
+        kotak.bank.in
+    validations:
+      required: true
+  - type: input
+    id: country
+    attributes:
+      label: Country or region
+  - type: textarea
+    id: fakes
+    attributes:
+      label: Fake versions you've seen (defanged, optional)
+      placeholder: hxxps://kotak-kyc-update[.]top

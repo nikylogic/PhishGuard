@@ -226,7 +226,12 @@ class ScanService:
 
     # --- phishing lists and domain age -----------------------------------------------------------
     def enable_lookups(self, feeds=None, domains=None):
-        self.feeds = feeds or Feeds(self.instance / "feeds").start()
+        if feeds is None:
+            import os  # noqa: PLC0415
+            from .feeds import sources_for  # noqa: PLC0415
+            business = os.environ.get("PHISHGUARD_BUSINESS") == "1"
+            feeds = Feeds(self.instance / "feeds", sources=sources_for(business)).start()
+        self.feeds = feeds
         self.domains = domains or DomainInfo(self.instance / "lookups", get=self._lookup_get)
         return self
 

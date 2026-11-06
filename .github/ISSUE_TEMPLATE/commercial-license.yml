@@ -1,0 +1,34 @@
+name: Commercial license request
+description: Use PhishGuard in a business. Only basic details here; the rest is taken private.
+title: "Commercial license: "
+labels: ["commercial-license"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        PhishGuard is free for individuals and noncommercial organisations, and needs a commercial license for business use. See [LICENSING.md](https://github.com/nikylogic/PhishGuard/blob/main/LICENSING.md).
+        **This issue is public.** Don't post contact details or anything confidential; the maintainer will reply here to continue privately.
+  - type: input
+    id: org
+    attributes:
+      label: Organisation name
+    validations:
+      required: true
+  - type: dropdown
+    id: size
+    attributes:
+      label: Number of PCs that would run PhishGuard
+      options: ["1–10", "11–50", "51–250", "251–1,000", "More than 1,000"]
+    validations:
+      required: true
+  - type: dropdown
+    id: use
+    attributes:
+      label: How would you use it?
+      options:
+        - On our own staff's computers
+        - Bundled with, or inside, a product we sell
+        - As part of a service for our customers (MSP, security service)
+        - Something else
+    validations:
+      required: true

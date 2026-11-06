@@ -34,6 +34,16 @@ SOURCES = {
     "Phishing.Database": ("https://raw.githubusercontent.com/Phishing-Database/Phishing.Database/master/"
                           "phishing-domains-ACTIVE.txt", "domains"),
 }
+# Lists whose terms allow only non-commercial use. PhishGuard's own licence is free for personal
+# and non-commercial use; a business copy (PHISHGUARD_BUSINESS=1, see LICENSING.md) leaves these out
+# unless the business has its own licence from the list's owner.
+NONCOMMERCIAL_ONLY = frozenset({"OpenPhish"})
+
+
+def sources_for(business: bool) -> dict:
+    return {k: v for k, v in SOURCES.items() if not (business and k in NONCOMMERCIAL_ONLY)}
+
+
 REFRESH = 6 * 3600
 MAX_BYTES = 40 * 1024 * 1024
 

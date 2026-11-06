@@ -1,0 +1,35 @@
+name: False alarm
+description: PhishGuard warned about a real, honest website.
+title: "False alarm: "
+labels: ["detection", "false-alarm"]
+body:
+  - type: input
+    id: link
+    attributes:
+      label: The website
+      placeholder: https://www.example.com/
+    validations:
+      required: true
+  - type: dropdown
+    id: verdict
+    attributes:
+      label: What did PhishGuard say?
+      options: [Danger, Caution]
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: The reasons PhishGuard showed (copy them from the "Why" list)
+    validations:
+      required: true
+  - type: textarea
+    id: real
+    attributes:
+      label: How do you know the site is real?
+      placeholder: It is my bank's official site; it is linked from their app…
+  - type: input
+    id: version
+    attributes:
+      label: PhishGuard version (Settings → General, at the bottom)
+      placeholder: "1.1.0"
