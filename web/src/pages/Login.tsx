@@ -1,5 +1,6 @@
 import * as React from "react"
-import { AlertCircleIcon, ShieldCheckIcon } from "lucide-react"
+import { AlertCircleIcon } from "lucide-react"
+import { Logo } from "@/components/logo"
 
 import { Alert, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -18,7 +19,7 @@ function Frame({ title, text, children }: { title: string; text: string; childre
           <CardContent className="grid p-0 md:grid-cols-2">
             <div className="flex flex-col gap-6 p-6 md:p-8">
               <a href="/" className="flex items-center gap-2 font-heading font-semibold">
-                <ShieldCheckIcon className="size-5" />
+                <Logo className="size-6" />
                 PhishGuard
               </a>
               <div className="grid gap-1">

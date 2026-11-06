@@ -1,5 +1,6 @@
+import { Logo } from "@/components/logo"
 import * as React from "react"
-import { HistoryIcon, LayoutDashboardIcon, ListChecksIcon, ScanTextIcon, Settings2Icon, ShieldCheckIcon } from "lucide-react"
+import { HistoryIcon, LayoutDashboardIcon, ListChecksIcon, ScanTextIcon, Settings2Icon } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
@@ -34,7 +35,7 @@ export function AppSidebar({ route, ...props }: React.ComponentProps<typeof Side
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:p-1.5!">
               <a href="/">
-                <ShieldCheckIcon className="size-5!" />
+                <Logo className="size-6!" />
                 <span className="font-heading text-base font-semibold">PhishGuard</span>
               </a>
             </SidebarMenuButton>
