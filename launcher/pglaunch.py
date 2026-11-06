@@ -222,12 +222,94 @@ def message_box(text: str) -> None:
         print(text, file=sys.stderr)
 
 
+MIN_W, MIN_H = 900, 640
+
+
+def light_theme() -> bool:
+    """Windows' app colour setting, so the window does not flash the wrong colour while loading."""
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                            r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize") as k:
+            return bool(winreg.QueryValueEx(k, "AppsUseLightTheme")[0])
+    except OSError:
+        return True
+
+
+class WindowControls:
+    """What the page may ask of its window, and nothing more: minimize, maximize or restore, close,
+    and resize from an edge. The window has no Windows title bar; PhishGuard's own header has these
+    buttons (web/src/components/window-controls.tsx)."""
+
+    def __init__(self):
+        self._window = None
+        self._maximized = False
+        self._saved = None              # the window's place before maximizing
+
+    def attach(self, window) -> None:
+        self._window = window
+
+    def minimize(self) -> None:
+        self._window.minimize()
+
+    def _hwnd(self) -> int:
+        return int(self._window.native.Handle.ToInt64())
+
+    def toggle_maximize(self) -> bool:
+        """Maximize to the monitor's work area (the screen minus the taskbar), or back.
+        Windows' own maximize would cover the taskbar, because the window has no frame."""
+        import ctypes
+        from ctypes import wintypes
+        user32 = ctypes.windll.user32
+        user32.MonitorFromWindow.restype = wintypes.HMONITOR
+        hwnd, flags = self._hwnd(), 0x0004 | 0x0010            # SWP_NOZORDER | SWP_NOACTIVATE
+        if not self._maximized:
+            r = wintypes.RECT()
+            user32.GetWindowRect(hwnd, ctypes.byref(r))
+            self._saved = (r.left, r.top, r.right - r.left, r.bottom - r.top)
+
+            class MONITORINFO(ctypes.Structure):
+                _fields_ = [("cbSize", wintypes.DWORD), ("rcMonitor", wintypes.RECT), ("rcWork", wintypes.RECT),
+                            ("dwFlags", wintypes.DWORD)]
+            info = MONITORINFO(cbSize=ctypes.sizeof(MONITORINFO))
+            user32.GetMonitorInfoW(user32.MonitorFromWindow(hwnd, 2), ctypes.byref(info))   # the nearest monitor
+            w = info.rcWork
+            user32.SetWindowPos(hwnd, None, w.left, w.top, w.right - w.left, w.bottom - w.top, flags)
+            self._maximized = True
+        else:
+            if self._saved:
+                user32.SetWindowPos(hwnd, None, *self._saved, flags)
+            self._maximized = False
+        return self._maximized
+
+    def is_maximized(self) -> bool:
+        return self._maximized
+
+    def close(self) -> None:
+        self._window.destroy()
+
+    def resize(self, width, height, edge) -> None:
+        from webview.window import FixPoint
+        edge = str(edge)
+        if self._maximized or not edge or set(edge) - set("nsew"):
+            return
+        w = max(MIN_W, min(int(width), 10000))
+        h = max(MIN_H, min(int(height), 10000))
+        # Keep the opposite edge where it is: dragging the left edge must not move the right one.
+        fix = (FixPoint.SOUTH if "n" in edge else FixPoint.NORTH) | (FixPoint.EAST if "w" in edge else FixPoint.WEST)
+        self._window.resize(w, h, fix)
+
+
 def open_window(check_url: str, cfg: dict, popen=subprocess.Popen) -> None:
     """Show the Airlock in its own small app window. If that is not possible, show the Airlock
     page (a local PhishGuard page, never the unchecked link) in the real browser."""
     try:
         import webview
-        webview.create_window("PhishGuard", check_url, width=1220, height=880, min_size=(900, 640))
+        controls = WindowControls()
+        window = webview.create_window("PhishGuard", check_url, width=1220, height=880, min_size=(MIN_W, MIN_H),
+                                       frameless=True, easy_drag=False, js_api=controls, text_select=True,
+                                       background_color="#ffffff" if light_theme() else "#0a0a0a")
+        controls.attach(window)
         webview.start()
         return
     except Exception as e:  # noqa: BLE001 - any window problem falls back to the browser

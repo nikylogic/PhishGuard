@@ -1,0 +1,11 @@
+PASS  no Windows title bar  0x16010000
+PASS  buttons are in the page header  
+PASS  header is the drag area  
+PASS  Maximize fills the screen but not the taskbar  (78, 78, 1282, 919) -> (0, 0, 1920, 1080)
+PASS  button turns into Restore  
+PASS  Restore brings the old size back  (78, 78, 1282, 919)
+PASS  left-edge resize keeps the right edge  (78, 78, 1282, 919) -> (228, 78, 1282, 919)
+PASS  cannot be made smaller than 900 x 640  (228, 78, 1128, 718)
+PASS  edges refuse junk  
+PASS  Minimize  
+PASS  Close closes the window  

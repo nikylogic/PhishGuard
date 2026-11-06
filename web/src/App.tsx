@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { FloatingWindowBar, ResizeEdges, useDesktop } from "@/components/window-controls"
 import { boot } from "@/lib/api"
 import { interceptLinks, TITLES, useRoute, type Route } from "@/lib/router"
 import { Airlock } from "@/pages/Airlock"
@@ -45,6 +46,7 @@ function Shell() {
   }, [])
   return (
     <SidebarProvider
+      className="h-svh overflow-hidden"
       style={
         {
           "--sidebar-width": "calc(var(--spacing) * 64)",
@@ -53,9 +55,10 @@ function Shell() {
       }
     >
       <AppSidebar variant="inset" route={route} />
-      <SidebarInset>
+      <SidebarInset className="min-h-0 overflow-hidden">
         <SiteHeader title={TITLES[route.page] ?? boot.title ?? "PhishGuard"} />
-        <div className="flex flex-1 flex-col">
+        {/* Only the page scrolls; the header (and the window buttons in it) stays put. */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="page-view flex flex-col gap-4 py-4 md:gap-6 md:py-6">
               <Page route={route} />
@@ -68,12 +71,13 @@ function Shell() {
 }
 
 function Body() {
+  const desktop = useDesktop()
   if (boot.page === "login") return <Login />
   if (boot.page === "setup") return <Setup />
   // The launcher's window shows one check without a login: no navigation around it.
   if (!boot.user) {
     return (
-      <main className="@container/main mx-auto flex min-h-svh w-full max-w-6xl flex-col gap-4 py-6">
+      <main className={`@container/main mx-auto flex min-h-svh w-full max-w-6xl flex-col gap-4 py-6 ${desktop ? "pt-12" : ""}`}>
         {boot.page === "check" ? <Airlock sid={boot.sid} /> : <Message />}
       </main>
     )
@@ -81,10 +85,22 @@ function Body() {
   return <Shell />
 }
 
+// In the app window: resize edges everywhere, and floating window buttons on pages without the header.
+function DesktopChrome() {
+  const inShell = boot.page !== "login" && boot.page !== "setup" && !!boot.user
+  return (
+    <>
+      <ResizeEdges />
+      {!inShell && <FloatingWindowBar />}
+    </>
+  )
+}
+
 export default function App() {
   return (
     <TooltipProvider>
       <Body />
+      <DesktopChrome />
       <Toaster position="bottom-right" />
     </TooltipProvider>
   )

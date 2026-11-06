@@ -248,7 +248,7 @@ def test_ui_is_shadcn_dashboard_01():
     pkg = (WEB / "package.json").read_text(encoding="utf-8")
     assert '"radix-ui"' in pkg and '"tailwindcss"' in pkg and "astryx" not in pkg
     app = (UI_SRC / "App.tsx").read_text(encoding="utf-8")
-    for part in ("<SidebarProvider", '<AppSidebar variant="inset"', "<SidebarInset>", "<SiteHeader"):
+    for part in ("<SidebarProvider", '<AppSidebar variant="inset"', "<SidebarInset", "<SiteHeader"):
         assert part in app, part
     home = (UI_SRC / "pages" / "Home.tsx").read_text(encoding="utf-8")
     for part in ("<SectionCards", "<ChartAreaInteractive", "<DataTable"):
