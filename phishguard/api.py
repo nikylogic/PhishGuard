@@ -15,7 +15,7 @@ from .urltools import UnsafeURL, clean_url, registrable_domain
 bp = Blueprint("api", __name__, url_prefix="/api")
 auth_bp = Blueprint("auth", __name__)
 
-SETTING_KEYS = {"browser_path", "llm_provider", "llm_api_key", "llm_model"}
+SETTING_KEYS = {"browser_path", "llm_provider", "llm_api_key", "llm_model", "keep_days"}
 LLM_PROVIDERS = {"none", "gemini", "groq", "ollama"}
 
 
@@ -376,6 +376,21 @@ def windows_remove():
     return jsonify(out)
 
 
+@bp.post("/windows/startup")
+@login_required("admin")
+def windows_startup():
+    from . import windows
+    on = (request.get_json(silent=True) or {}).get("on")
+    if not isinstance(on, bool):
+        return err("Say on: true or on: false.")
+    try:
+        out = windows.set_startup(on)
+    except Exception as e:  # noqa: BLE001
+        return err(f"Could not change start with Windows: {e}", 500)
+    audit("startup", "on" if on else "off")
+    return jsonify(out)
+
+
 # --- Hide my IP ---------------------------------------------------------------------------------
 
 def _privacy_status() -> dict:
@@ -427,7 +442,7 @@ def privacy_save():
     return jsonify(_privacy_status())
 
 
-@bp.get("/lists")
+@bp.get("/feeds")
 @login_required()
 def lists_status():
     """The public phishing lists: how many entries each has and when it was last updated."""
@@ -437,7 +452,7 @@ def lists_status():
     return jsonify(enabled=True, **feeds.status())
 
 
-@bp.post("/lists/update")
+@bp.post("/feeds/update")
 @login_required("admin")
 def lists_update():
     feeds = svc().feeds
@@ -507,6 +522,8 @@ def write_settings():
             return err("Unknown AI provider.")
         if k == "browser_path" and v and not browser.is_browser(v):
             return err("That browser program was not found.")
+        if k == "keep_days" and v not in svc().KEEP_CHOICES:
+            return err("Choose 30, 90 or 365 days, or keep everything.")
         if k == "llm_api_key" and v.startswith("•"):
             continue                       # the masked value came back unchanged
         con.execute("INSERT INTO settings(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
@@ -515,8 +532,33 @@ def write_settings():
     con.commit()
     if "browser_path" in changed:
         svc().write_browser_cache()
+    if "keep_days" in changed:
+        svc().purge()
     audit("settings", ", ".join(changed))
     return jsonify(ok=True, changed=changed)
+
+
+@bp.get("/history")
+@login_required("admin")
+def history_status():
+    s = svc()
+    return jsonify(keep_days=s.keep_days(), **s.storage())
+
+
+@bp.post("/history/clear")
+@login_required("admin")
+def history_clear():
+    n = svc().purge(everything=True)
+    audit("history_clear", f"{n} checks")
+    s = svc()
+    return jsonify(deleted=n, keep_days=s.keep_days(), **s.storage())
+
+
+@bp.get("/about")
+@login_required()
+def about():
+    from . import __version__
+    return jsonify(version=__version__)
 
 
 @bp.get("/users")

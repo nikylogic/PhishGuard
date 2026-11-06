@@ -49,11 +49,20 @@ def _shortcut() -> Path | None:
 def status() -> dict:
     reg = registry()
     if not reg:
-        return {"supported": False, "registered": False, "default": False, "shortcut": False}
+        return {"supported": False, "registered": False, "default": False, "shortcut": False, "startup": False}
     base = current_app.config["REGISTRY_BASE"]
     shortcut = _shortcut() or reg.shortcut_path()
     return {"supported": True, "registered": reg.is_registered(base), "default": reg.is_default(base),
-            "shortcut": shortcut.exists()}
+            "shortcut": shortcut.exists(), "startup": reg.startup_enabled(base)}
+
+
+def set_startup(on: bool) -> dict:
+    """Start with Windows: a value under the Run key that starts the engine quietly at sign-in."""
+    reg = registry()
+    if not reg:
+        raise RuntimeError("This only works on Windows.")
+    reg.set_startup(on, current_app.config["REGISTRY_BASE"])
+    return status()
 
 
 def make_default() -> dict:

@@ -10,6 +10,7 @@
 import json
 import logging
 import secrets
+import shutil
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -135,6 +136,70 @@ class ScanService:
         tmp = self.instance / "browser.txt.tmp"
         tmp.write_text(exe + "\n", encoding="utf-8")
         tmp.replace(self.instance / "browser.txt")
+
+    # --- history: how long checks are kept --------------------------------------------------
+    KEEP_CHOICES = ("30", "90", "365", "0")         # days; 0 = keep everything
+    KEEP_DEFAULT = "90"
+
+    def keep_days(self) -> int:
+        v = self.settings().get("keep_days") or self.KEEP_DEFAULT
+        return int(v) if v in self.KEEP_CHOICES else int(self.KEEP_DEFAULT)
+
+    def purge(self, days: int | None = None, everything: bool = False) -> int:
+        """Delete finished checks older than `days` (default: the setting) with their screenshots and
+        quarantined files. `everything` deletes all finished checks. Running checks are never touched;
+        the audit log is kept. Returns how many checks were deleted."""
+        days = self.keep_days() if days is None else days
+        if not everything and days <= 0:
+            return 0
+        con = self._con()
+        try:
+            where = "status IN ('done', 'partial', 'failed')"
+            args: tuple = ()
+            if not everything:
+                where += " AND created_at < datetime('now', ?)"
+                args = (f"-{int(days)} days",)
+            rows = con.execute(f"SELECT id, screenshot FROM scans WHERE {where}", args).fetchall()   # noqa: S608 - fixed text
+            for r in rows:
+                if r["screenshot"]:
+                    (self.instance / "shots" / Path(r["screenshot"]).name).unlink(missing_ok=True)
+                shutil.rmtree(self.instance / "quarantine" / str(int(r["id"])), ignore_errors=True)
+            con.executemany("DELETE FROM scans WHERE id = ?", [(r["id"],) for r in rows])
+            con.commit()
+        finally:
+            con.close()
+        return len(rows)
+
+    def storage(self) -> dict:
+        """How much disk the history uses."""
+        def size(path: Path) -> int:
+            if path.is_file():
+                return path.stat().st_size
+            return sum(f.stat().st_size for f in path.rglob("*") if f.is_file()) if path.exists() else 0
+        con = self._con()
+        try:
+            n = con.execute("SELECT COUNT(*) FROM scans").fetchone()[0]
+        finally:
+            con.close()
+        db = sum(size(Path(str(self.db_path) + x)) for x in ("", "-wal"))
+        return {"checks": n, "bytes": db + size(self.instance / "shots") + size(self.instance / "quarantine"),
+                "folder": str(self.instance)}
+
+    def start_housekeeping(self):
+        """Apply the history setting now and once a day."""
+        def loop():
+            while not self._stop_housekeeping.wait(0 if not self._housekept else 24 * 3600):
+                self._housekept = True
+                try:
+                    n = self.purge()
+                    if n:
+                        log.info("history: deleted %d checks older than %d days", n, self.keep_days())
+                except Exception:  # noqa: BLE001
+                    log.exception("history clean-up failed")
+        self._housekept = False
+        self._stop_housekeeping = threading.Event()
+        threading.Thread(target=loop, name="pg-housekeeping", daemon=True).start()
+        return self
 
     # --- Hide my IP ----------------------------------------------------------------------------
     def settings(self) -> dict:

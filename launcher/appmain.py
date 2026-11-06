@@ -2,6 +2,7 @@
 
     PhishGuard.exe                 open the dashboard (the Start menu shortcut)
     PhishGuard.exe "<url>"         check a clicked link (what Windows runs once PhishGuard is the default)
+    PhishGuard.exe --background    start the engine quietly (Start with Windows)
     PhishGuard.exe --unregister    remove the Windows registration (run by the uninstaller)
     PhishGuard.exe --stop          stop the engine and Tor (run before an update or uninstall)
 
@@ -32,6 +33,16 @@ def stop(instance: Path) -> None:
     pid_file.unlink(missing_ok=True)
 
 
+def first_run_startup(instance: Path, registry) -> None:
+    """Start with Windows is on by default. It is switched on once, the first time the app runs;
+    after that only the user's choice in Settings (or Task Manager) counts, also across updates."""
+    mark = instance / "startup.set"
+    if not registry.FROZEN or mark.exists():   # only the installed app, never tests or dev runs
+        return
+    registry.set_startup(True)
+    mark.write_text("on by default at first run\n", encoding="utf-8")
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv if argv is None else argv)
     os.environ.setdefault("PHISHGUARD_INSTANCE", str(data_dir()))
@@ -41,6 +52,7 @@ def main(argv: list[str] | None = None) -> int:
     if args[:1] == ["--unregister"]:
         import registry                               # noqa: PLC0415
         registry.unregister()
+        registry.set_startup(False)
         registry.remove_shortcut()
         return 0
     if args[:1] == ["--stop"]:
@@ -49,6 +61,8 @@ def main(argv: list[str] | None = None) -> int:
     try:                                              # fix a link command left by an older build
         import registry                               # noqa: PLC0415
         registry.repair()
+        registry.repair_startup()
+        first_run_startup(instance, registry)
     except Exception:                                 # noqa: BLE001  never block opening a link
         pass
     import pglaunch                                   # noqa: PLC0415

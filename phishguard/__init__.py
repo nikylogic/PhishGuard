@@ -8,6 +8,8 @@ import secrets
 from datetime import timedelta
 from pathlib import Path
 
+__version__ = "1.1.0"
+
 from flask import Flask, g, jsonify, request
 from werkzeug.exceptions import HTTPException
 
@@ -95,6 +97,7 @@ def create_app(overrides: dict | None = None) -> Flask:
         service = ScanService(app.config["DATABASE"], instance)
         if app.config.get("START_WORKER"):
             service.enable_lookups()           # phishing lists + domain age (network)
+            service.start_housekeeping()       # delete old history, as set in Settings
             from .sandbox import Sandbox
             from .worker import ScanWorker
             service.worker = ScanWorker(

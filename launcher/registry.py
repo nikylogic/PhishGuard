@@ -195,6 +195,57 @@ SETTINGS_PAGE = f"ms-settings:defaultapps?registeredAppUser={APP}"   # opens Phi
 SETTINGS_LIST = "ms-settings:defaultapps"
 
 
+# --- start with Windows ------------------------------------------------------------------------
+# A value under HKCU\...\Run starts the engine quietly at sign-in, so the first clicked link is
+# checked at once instead of waiting for the engine and the sandbox browser to start. Task
+# Manager's Startup tab can switch it off; Windows records that under StartupApproved\Run.
+
+def run_keys(base: str = "Software") -> tuple[str, str]:
+    cv = rf"{base}\Microsoft\Windows\CurrentVersion"
+    return rf"{cv}\Run", rf"{cv}\Explorer\StartupApproved\Run"
+
+
+def startup_command(pythonw: str | None = None, script: Path = LAUNCHER) -> str:
+    if FROZEN and pythonw is None:
+        return f'"{app_exe()}" --background'
+    return f'"{pythonw or default_pythonw()}" "{script}" --background'
+
+
+def startup_enabled(base: str = "Software") -> bool:
+    run, approved = run_keys(base)
+    if _read(run, APP) is None:
+        return False
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, approved) as k:
+            flag = bytes(winreg.QueryValueEx(k, APP)[0])[:1]
+        return not (flag and flag[0] & 1)      # 02 = on, 03 = switched off in Task Manager
+    except OSError:
+        return True
+
+
+def set_startup(on: bool, base: str = "Software", pythonw: str | None = None, script: Path = LAUNCHER) -> bool:
+    run, approved = run_keys(base)
+    if on:
+        _set(run, {APP: startup_command(pythonw, script)})
+    for path in ((approved,) if on else (run, approved)):
+        try:   # on: clear a Task Manager "disabled" mark; off: remove both values
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, path, 0, winreg.KEY_SET_VALUE) as k:
+                winreg.DeleteValue(k, APP)
+        except FileNotFoundError:
+            pass
+    return startup_enabled(base)
+
+
+def repair_startup(base: str = "Software") -> bool:
+    """If start-with-Windows is on but points at an old place (the app moved), write it again."""
+    run, _ = run_keys(base)
+    old = _read(run, APP)
+    if not FROZEN or old is None or old == startup_command():
+        return False
+    _set(run, {APP: startup_command()})
+    return True
+
+
 # --- the Start menu shortcut (opens the dashboard) -------------------------------------------
 
 def shortcut_path() -> Path:

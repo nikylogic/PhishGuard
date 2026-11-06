@@ -3,6 +3,7 @@
     pythonw pg_open.pyw "<url>"            (registered as the http/https handler)
     python  pg_open.pyw --no-window <url>  (prints the Airlock address instead of opening it; used by tests)
     pythonw pg_open.pyw --dashboard        (the Start menu shortcut: opens the dashboard)
+    pythonw pg_open.pyw --background       (at Windows sign-in: start the engine, show nothing)
 
 1. Only http and https links are accepted. Anything else (javascript:, file:, ms-msdt: ...) is refused.
 2. Trusted (allowlisted) sites open straight away in the real browser. This reads two small
@@ -33,6 +34,7 @@ HOST = "127.0.0.1"
 NOT_A_BROWSER = {"python.exe", "pythonw.exe", "py.exe", "pyw.exe"}
 CHROMIUM = ("chrome", "msedge", "brave")
 START_TIMEOUT = 30.0       # first start loads the AI Guard model and the sandbox browser
+BACKGROUND_TIMEOUT = 120.0  # at sign-in the PC is busy; there is no one waiting
 STARTED = time.monotonic()  # for the timings written to launcher.log
 
 TITLE = "PhishGuard"
@@ -368,11 +370,21 @@ def emit(text: str, out, cfg: dict) -> None:
 
 def main(argv: list[str], env=os.environ, popen=subprocess.Popen, alert=message_box, window=open_window,
          out=sys.stdout) -> int:
-    flags = {"--no-window", "--dashboard"}
+    flags = {"--no-window", "--dashboard", "--background"}
     args = [a for a in argv[1:] if a not in flags]
     no_window = "--no-window" in argv[1:]
     cfg = config(env)
     raw = args[0] if args else ""
+    if "--background" in argv[1:]:
+        # Start with Windows: get the engine ready so the first link is checked at once. Quiet on
+        # failure (no dialog at sign-in); the next click starts the engine anyway.
+        try:
+            ensure_server(cfg, popen=popen, env=env, timeout=BACKGROUND_TIMEOUT)
+            log(cfg, f"background: engine ready at {time.monotonic() - STARTED:.1f} s")
+            return 0
+        except Exception as e:  # noqa: BLE001
+            log(cfg, f"background start failed: {type(e).__name__}: {e}")
+            return 1
     if "--dashboard" in argv[1:]:
         def dashboard() -> str:
             ensure_server(cfg, popen=popen, env=env)

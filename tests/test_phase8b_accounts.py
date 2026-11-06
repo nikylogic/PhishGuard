@@ -266,10 +266,10 @@ def test_launcher_dashboard_fails_with_a_message(tmp_path):
 def test_default_browser_button_registers_and_opens_windows_settings(app, reg_base, opened, tmp_path):
     c = personal(app)
     assert c.get("/api/windows").get_json() == {"supported": True, "registered": False, "default": False,
-                                                "shortcut": False}
+                                                "shortcut": False, "startup": False}
     r = post(c, "/api/windows/default")
     assert r.status_code == 200, r.get_json()
-    assert r.get_json() == {"supported": True, "registered": True, "default": False, "shortcut": True}
+    assert r.get_json() == {"supported": True, "registered": True, "default": False, "shortcut": True, "startup": False}
     # Windows Settings opened on PhishGuard's own page; nothing else was opened.
     assert opened == ["ms-settings:defaultapps?registeredAppUser=PhishGuard"]
     # The registry entries are the same ones register_windows.py writes.
@@ -299,7 +299,7 @@ def test_remove_undoes_everything_and_opens_the_default_apps_list(app, reg_base,
     c = personal(app)
     post(c, "/api/windows/default")
     r = post(c, "/api/windows/remove")
-    assert r.get_json() == {"supported": True, "registered": False, "default": False, "shortcut": False}
+    assert r.get_json() == {"supported": True, "registered": False, "default": False, "shortcut": False, "startup": False}
     assert opened[-1] == "ms-settings:defaultapps"
     assert registry.dump(reg_base) == [] and not (tmp_path / "Start Menu" / "PhishGuard.lnk").exists()
 

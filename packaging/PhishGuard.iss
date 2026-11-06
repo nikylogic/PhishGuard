@@ -3,7 +3,7 @@
 ;   Program:  %LOCALAPPDATA%\Programs\PhishGuard
 ;   Data:     %LOCALAPPDATA%\PhishGuard  (history, settings, Tor once downloaded)
 
-#define AppVersion "1.0.0"
+#define AppVersion "1.1.0"
 
 [Setup]
 AppId={{8F1C2B4E-6A3D-4F7B-9C21-5E0A7D3B9F11}
