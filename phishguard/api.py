@@ -376,6 +376,101 @@ def windows_remove():
     return jsonify(out)
 
 
+# --- Hide my IP ---------------------------------------------------------------------------------
+
+def _privacy_status() -> dict:
+    from . import privacy
+    s = svc().settings()
+    mode = s.get("privacy_mode") or "off"
+    proxy = ""
+    if s.get("privacy_proxy"):
+        try:
+            proxy = privacy.shown(privacy.parse_proxy(s["privacy_proxy"]))
+        except ValueError:
+            proxy = ""
+    return {"mode": mode, "proxy": proxy, "tor": svc().tor.status(), "warp": svc().warp_finder()}
+
+
+@bp.get("/privacy")
+@login_required("admin")
+def privacy_status():
+    return jsonify(_privacy_status())
+
+
+@bp.post("/privacy")
+@login_required("admin")
+def privacy_save():
+    from . import privacy
+    from .auth import set_setting
+    data = request.get_json(silent=True) or {}
+    mode = data.get("mode")
+    if mode not in privacy.MODES:
+        return err("Choose Off, Tor, Cloudflare WARP or your own proxy.")
+    con = get_db()
+    if mode == "custom":
+        text = str(data.get("proxy", "")).strip()
+        old = svc().settings().get("privacy_proxy", "")
+        try:
+            if old and text == privacy.shown(privacy.parse_proxy(old)):
+                text = old                 # the masked address came back unchanged: keep the password
+        except ValueError:
+            pass
+        try:
+            privacy.parse_proxy(text)
+        except ValueError as e:
+            return err(str(e))
+        set_setting(con, "privacy_proxy", text)
+    set_setting(con, "privacy_mode", mode)
+    con.commit()
+    svc().apply_privacy()
+    audit("privacy", mode)
+    return jsonify(_privacy_status())
+
+
+@bp.post("/privacy/tor")
+@login_required("admin")
+def privacy_tor_download():
+    """Download Tor once, in the background. Only the pinned official file is accepted."""
+    tor = svc().tor
+    if tor.installed():
+        return jsonify(_privacy_status())
+    opener = current_app.config.get("TOR_OPENER")
+
+    def run():
+        try:
+            tor.install(**({"opener": opener} if opener else {}))
+            svc().apply_privacy()
+        except Exception:  # noqa: BLE001 - the status shows what went wrong
+            pass
+    import threading
+    threading.Thread(target=run, name="pg-tor-download", daemon=True).start()
+    audit("privacy", "download Tor")
+    return jsonify(_privacy_status()), 202
+
+
+@bp.post("/privacy/test")
+@login_required("admin")
+def privacy_test():
+    """Ask a public service which address it sees, through the route and (for comparison) without it."""
+    from . import privacy
+    url = current_app.config.get("WHOAMI_URL") or privacy.WHOAMI_URL
+    try:
+        up = svc().privacy_route()
+    except privacy.Unavailable as e:
+        return err(str(e), 409)
+    out = {"route": up.label if up else "", "seen": None, "direct": None, "error": ""}
+    try:
+        out["seen"] = privacy.whoami(up, url)
+    except OSError as e:
+        out["error"] = f"The test through {up.label if up else 'your connection'} failed: {e}"
+    if up:
+        try:
+            out["direct"] = privacy.whoami(None, url)
+        except OSError:
+            pass
+    return jsonify(out)
+
+
 @bp.post("/settings")
 @login_required("admin")
 def write_settings():

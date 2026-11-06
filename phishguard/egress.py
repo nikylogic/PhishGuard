@@ -5,12 +5,19 @@ every hop of a redirect chain. A proxy sees every single connection (pages,
 redirects, images, scripts, WebSockets, iframes). It resolves the host name
 itself, checks the address, and then connects to exactly the IP it checked, so
 a DNS answer cannot change between the check and the connection (DNS rebinding).
+
+With Hide my IP on (privacy.py), the gatekeeper does NOT look names up: it hands the name to the
+route (Tor, WARP or the user's proxy), which looks it up and connects. Your own DNS server never
+sees the site. Addresses typed as numbers are still checked, local-only names are refused, and if
+the route is down the connection is refused: there is never a direct fallback.
 """
+import ipaddress
 import select
 import socket
 import threading
 from urllib.parse import urlsplit
 
+from . import privacy
 from .urltools import is_private_ip
 
 BLOCK_PAGE = (b"<!doctype html><meta charset=utf-8><title>Blocked by PhishGuard</title>"
@@ -25,6 +32,7 @@ class EgressProxy:
         self.connect_timeout = connect_timeout
         self.idle_timeout = idle_timeout
         self._lock = threading.Lock()
+        self.upstream: privacy.Upstream | None = None
         self.begin_scan()
         self._srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._srv.bind(("127.0.0.1", 0))
@@ -49,8 +57,10 @@ class EgressProxy:
             pass
 
     # --- per-scan bookkeeping ------------------------------------------------------------
-    def begin_scan(self):
+    def begin_scan(self, upstream: "privacy.Upstream | None" = None):
         with self._lock:
+            self.upstream = upstream.per_check() if upstream else None
+            self.routed: list[str] = []          # host names handed to the route (tests, proof)
             self.resolver = self.resolver_factory()
             self.blocked: list[dict] = []
             self.hosts: set[str] = set()
@@ -66,6 +76,9 @@ class EgressProxy:
         with self._lock:
             if len(self.hosts) < 1000:
                 self.hosts.add(host)
+        if self.upstream is not None:
+            return self._check_routed(host, port)
+        with self._lock:
             ips = self.resolver.ips(host)
         if not ips:
             return None, "host could not be resolved"
@@ -73,6 +86,26 @@ class EgressProxy:
             if is_private_ip(ip) and (ip, port) not in self.exempt:
                 return None, f"private address {ip} (blocked to protect your network)"
         return ips[0], None
+
+    def _check_routed(self, host: str, port: int) -> tuple[str | None, str | None]:
+        try:
+            ip = ipaddress.ip_address(host)
+        except ValueError:
+            if privacy.local_name(host):
+                return None, "local network name (not sent through Hide my IP)"
+            return host, None                   # the route looks the name up, not this PC
+        if is_private_ip(str(ip)) and (str(ip), port) not in self.exempt:
+            return None, f"private address {ip} (blocked to protect your network)"
+        return str(ip), None
+
+    def _connect(self, target: str, port: int) -> tuple[socket.socket, bytes]:
+        up = self.upstream
+        if up is None:
+            return socket.create_connection((target, port), timeout=self.connect_timeout), b""
+        with self._lock:
+            if len(self.routed) < 1000:
+                self.routed.append(f"{target}:{port}")
+        return privacy.open_tunnel(up, target, port, timeout=max(self.connect_timeout, 20.0))
 
     # --- proxy plumbing ---------------------------------------------------------------------
     def _accept_loop(self):
@@ -107,8 +140,13 @@ class EgressProxy:
                     self._block(f"https://{host}:{port}/", reason)
                     c.sendall(b"HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
                     return
-                up = socket.create_connection((ip, port), timeout=self.connect_timeout)
-                c.sendall(b"HTTP/1.1 200 Connection Established\r\n\r\n")
+                try:
+                    up, early = self._connect(ip, port)
+                except OSError as e:
+                    self._route_down(f"https://{host}:{port}/", e)
+                    c.sendall(b"HTTP/1.1 502 Bad Gateway\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+                    return
+                c.sendall(b"HTTP/1.1 200 Connection Established\r\n\r\n" + early)
                 if rest:
                     up.sendall(rest)
             else:
@@ -132,8 +170,15 @@ class EgressProxy:
                 upgrade = any(h.lower().startswith("upgrade:") for h in headers)
                 headers.append("Connection: Upgrade" if upgrade else "Connection: close")
                 req = f"{method} {path} {version}\r\n" + "\r\n".join(headers) + "\r\n\r\n"
-                up = socket.create_connection((ip, port), timeout=self.connect_timeout)
+                try:
+                    up, early = self._connect(ip, port)
+                except OSError as e:
+                    self._route_down(target, e)
+                    c.sendall(b"HTTP/1.1 502 Bad Gateway\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+                    return
                 up.sendall(req.encode("latin-1") + rest)
+                if early:
+                    c.sendall(early)
             self._pipe(c, up)
         except (OSError, ValueError):
             pass
@@ -144,6 +189,11 @@ class EgressProxy:
                         s.close()
                     except OSError:
                         pass
+
+    def _route_down(self, url: str, e: Exception) -> None:
+        if self.upstream is not None:
+            self._block(url, f"Hide my IP: {self.upstream.label or 'the proxy'} did not connect ({e}). "
+                             "Nothing was sent directly.")
 
     def _pipe(self, a: socket.socket, b: socket.socket):
         socks = [a, b]

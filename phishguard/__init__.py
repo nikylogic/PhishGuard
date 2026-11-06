@@ -91,7 +91,7 @@ def create_app(overrides: dict | None = None) -> Flask:
             from .sandbox import Sandbox
             from .worker import ScanWorker
             service.worker = ScanWorker(
-                lambda: Sandbox(instance / "shots", instance / "quarantine"),
+                lambda: Sandbox(instance / "shots", instance / "quarantine", route=service.privacy_route),
                 on_done=service.on_capture, on_start=service.mark_running).start()
     app.extensions["pg_service"] = service
 

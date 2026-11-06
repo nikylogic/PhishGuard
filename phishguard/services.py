@@ -15,6 +15,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from . import browser
+from . import privacy
 from . import db as dbmod
 from . import pagerules  # noqa: F401 - registers the page rules
 from .guard.guard import get_guard
@@ -52,6 +53,9 @@ class ScanService:
         self.recover()
         self.write_allowlist_cache()
         self.write_browser_cache()
+        self.tor = privacy.Tor(self.instance)
+        self.warp_finder = privacy.find_warp
+        self.apply_privacy()
 
     def recover(self):
         """After a restart, nothing is still running: close off unfinished scans honestly."""
@@ -96,6 +100,29 @@ class ScanService:
         tmp = self.instance / "browser.txt.tmp"
         tmp.write_text(exe + "\n", encoding="utf-8")
         tmp.replace(self.instance / "browser.txt")
+
+    # --- Hide my IP ----------------------------------------------------------------------------
+    def settings(self) -> dict:
+        con = self._con()
+        try:
+            return get_settings(con)
+        finally:
+            con.close()
+
+    def privacy_route(self):
+        """Called by the sandbox before every check (on its own thread)."""
+        return privacy.route(self.settings(), self.tor, self.warp_finder)
+
+    def apply_privacy(self):
+        """Start Tor in the background when it is the chosen route; stop it when it is not."""
+        if self.settings().get("privacy_mode") == "tor":
+            if self.tor.installed():
+                try:
+                    self.tor.start()
+                except Exception:  # noqa: BLE001 - the status shows the problem; checks fail closed
+                    log.exception("Tor did not start")
+        else:
+            self.tor.stop()
 
     # --- create -------------------------------------------------------------------------------
     def create_scan(self, raw_url: str, source: str, user_id=None) -> dict:
@@ -179,7 +206,7 @@ class ScanService:
             else:
                 level = v["level"]
             page = {k: c.get(k) for k in ("forms", "downloads", "protocol_attempts", "blocked", "link_schemes",
-                                          "tls", "timings", "http_status", "request_domains")}
+                                          "tls", "timings", "http_status", "request_domains", "route")}
             page["events"] = c.get("events", [])[:100]
             page["visible_text"] = (c.get("visible_text") or "")[:2000]
             page["hidden_text"] = (c.get("hidden_text") or "")[:2000]

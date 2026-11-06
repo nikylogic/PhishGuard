@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { Progress } from "@/components/ui/progress"
+import { Spinner } from "@/components/ui/spinner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -189,6 +191,178 @@ function AccountMode() {
   )
 }
 
+type Privacy = {
+  mode: "off" | "tor" | "warp" | "custom"
+  proxy: string
+  tor: { state: string; message: string; progress: number; version: string; installed: boolean }
+  warp: { installed: boolean; ready: boolean; port: number | null; message: string }
+}
+type Seen = { ip: string; is_tor: boolean }
+type TestResult = { route: string; seen: Seen | null; direct: Seen | null; error: string }
+
+const ROUTES = [
+  { value: "off", label: "Off" },
+  { value: "tor", label: "Tor (built in, free)" },
+  { value: "warp", label: "Cloudflare WARP (app on this PC)" },
+  { value: "custom", label: "My own proxy" },
+]
+
+// Hide my IP: the sandbox reaches websites through Tor, WARP or a proxy, so they never see this PC's address.
+function HideMyIp() {
+  const [st, setSt] = React.useState<Privacy | null>(null)
+  const [mode, setMode] = React.useState<Privacy["mode"]>("off")
+  const [proxy, setProxy] = React.useState("")
+  const [test, setTest] = React.useState<TestResult | null>(null)
+  const [busy, setBusy] = React.useState(false)
+  const load = React.useCallback(
+    () =>
+      api<Privacy>("/api/privacy")
+        .then((s) => {
+          setSt(s)
+          return s
+        })
+        .catch(() => null),
+    [],
+  )
+  React.useEffect(() => {
+    load().then((s) => {
+      if (s) {
+        setMode(s.mode)
+        setProxy(s.proxy)
+      }
+    })
+  }, [load])
+  // While Tor downloads or connects, refresh once a second.
+  const torBusy = st?.tor.state === "downloading" || st?.tor.state === "starting"
+  React.useEffect(() => {
+    if (!torBusy) return
+    const t = window.setInterval(load, 1000)
+    return () => window.clearInterval(t)
+  }, [torBusy, load])
+
+  if (!st) return null
+  const saveMode = async () => {
+    setBusy(true)
+    setTest(null)
+    try {
+      setSt(await api<Privacy>("/api/privacy", { method: "POST", body: { mode, proxy } }))
+      toast.success(mode === "off" ? "Hide my IP is off." : "Saved. New checks use this route.")
+    } catch (e) {
+      toast.error(errText(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+  const download = async () => {
+    try {
+      setSt(await api<Privacy>("/api/privacy/tor", { method: "POST" }))
+    } catch (e) {
+      toast.error(errText(e))
+    }
+  }
+  const runTest = async () => {
+    setBusy(true)
+    setTest(null)
+    try {
+      setTest(await api<TestResult>("/api/privacy/test", { method: "POST" }))
+    } catch (e) {
+      toast.error(errText(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+  const tor = st.tor
+  const saved = st.mode === mode && (mode !== "custom" || st.proxy === proxy)
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Hide my IP</CardTitle>
+        <CardDescription>
+          While PhishGuard checks a link, the site sees another network's address instead of yours. Links you then open in your own browser use
+          your normal connection.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <FieldGroup>
+          <Field>
+            <FieldLabel htmlFor="route">Route</FieldLabel>
+            <Select value={mode} onValueChange={(v) => setMode(v as Privacy["mode"])}>
+              <SelectTrigger id="route" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ROUTES.map((r) => (
+                  <SelectItem key={r.value} value={r.value}>
+                    {r.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {mode === "tor" && (
+              <FieldDescription>
+                {tor.state === "downloading"
+                  ? `Downloading Tor ${tor.version} from torproject.org: ${tor.progress}%`
+                  : tor.state === "starting"
+                    ? `Connecting to the Tor network: ${tor.progress}%`
+                    : tor.state === "running"
+                      ? "Connected to the Tor network. Each check uses its own Tor circuit."
+                      : tor.installed
+                        ? `Tor ${tor.version} is downloaded.`
+                        : tor.state === "error"
+                          ? tor.message
+                          : `PhishGuard downloads the official Tor ${tor.version} (about 24 MB) once and checks its fingerprint.`}
+              </FieldDescription>
+            )}
+            {mode === "warp" && <FieldDescription>{st.warp.message}</FieldDescription>}
+          </Field>
+          {torBusy && <Progress value={tor.progress} aria-label="Tor progress" />}
+          {mode === "custom" && (
+            <Field>
+              <FieldLabel htmlFor="proxy">Proxy address</FieldLabel>
+              <Input id="proxy" placeholder="socks5://127.0.0.1:1080" autoComplete="off" value={proxy} onChange={(e) => setProxy(e.target.value)} />
+              <FieldDescription>SOCKS5 or HTTP. Use only a proxy you trust: it can see which sites are checked.</FieldDescription>
+            </Field>
+          )}
+          {test && (
+            <div className="grid gap-1 rounded-lg border p-3 text-sm">
+              {test.error ? (
+                <p className="text-danger">{test.error}</p>
+              ) : (
+                <>
+                  <p>
+                    Sites see <span className="font-mono font-medium">{test.seen?.ip}</span>
+                    {test.seen?.is_tor ? " (a Tor address)" : ""}
+                  </p>
+                  {test.direct && (
+                    <p className="text-muted-foreground">
+                      Without Hide my IP they would see <span className="font-mono">{test.direct.ip}</span>
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </FieldGroup>
+      </CardContent>
+      <CardFooter className="flex-wrap gap-2">
+        {mode === "tor" && !tor.installed && tor.state !== "downloading" ? (
+          <Button onClick={download}>Download Tor</Button>
+        ) : (
+          <Button disabled={busy || saved} onClick={saveMode}>
+            Save
+          </Button>
+        )}
+        {saved && st.mode !== "off" && (
+          <Button variant="outline" disabled={busy || torBusy} onClick={runTest}>
+            {busy && <Spinner />}
+            Test
+          </Button>
+        )}
+      </CardFooter>
+    </Card>
+  )
+}
+
 async function save(body: object) {
   try {
     await api("/api/settings", { method: "POST", body })
@@ -208,6 +382,7 @@ function General() {
   return (
     <div className="grid grid-cols-1 items-start gap-4 @4xl/main:grid-cols-2">
       <DefaultBrowser />
+      <HideMyIp />
       <AccountMode />
       <Card>
         <CardHeader>

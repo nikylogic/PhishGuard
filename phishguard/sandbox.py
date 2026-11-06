@@ -20,10 +20,22 @@ from playwright.sync_api import TimeoutError as PWTimeout
 from playwright.sync_api import sync_playwright
 
 from . import filetypes
+from . import privacy
 from .egress import EgressProxy
 from .urltools import registrable_domain
 
 HOOKS_JS = (Path(__file__).with_name("hooks.js")).read_text(encoding="utf-8")
+NO_WEBRTC_JS = """(() => {
+  for (const name of ["RTCPeerConnection", "webkitRTCPeerConnection", "RTCDataChannel", "RTCIceCandidate",
+                      "RTCSessionDescription", "RTCRtpSender", "RTCRtpReceiver", "RTCRtpTransceiver"]) {
+    try { Object.defineProperty(window, name, { value: undefined, configurable: false, writable: false }); } catch (e) {}
+  }
+  try {
+    if (navigator.mediaDevices) {
+      Object.defineProperty(navigator, "mediaDevices", { value: undefined, configurable: false });
+    }
+  } catch (e) {}
+})();"""
 
 SAFE_SUB_SCHEMES = {"http", "https", "data", "blob", "about"}
 MAX_TEXT = 8000
@@ -114,6 +126,7 @@ class Capture:
     request_domains: list = field(default_factory=list)
     tls: dict = field(default_factory=dict)
     timings: dict = field(default_factory=dict)
+    route: str = ""                                     # "Tor", "Cloudflare WARP", "Your proxy" or "" (direct)
 
     def to_dict(self):
         return asdict(self)
@@ -148,7 +161,7 @@ class Sandbox:
 
     def __init__(self, shots_dir, quarantine_dir, *, nav_timeout=15.0, total_timeout=20.0,
                  settle=1.5, resolver_factory=Resolver, exempt=(), extra_args=(),
-                 channel="chrome"):
+                 channel="chrome", route=None):
         self.shots_dir = Path(shots_dir)
         self.quarantine_dir = Path(quarantine_dir)
         self.nav_timeout = nav_timeout
@@ -156,6 +169,7 @@ class Sandbox:
         self.settle = settle
         self.extra_args = list(extra_args)
         self.channel = channel
+        self.route = route              # Hide my IP: returns the route for the next check, or None (privacy.py)
         # Every connection the sandbox makes goes through this gatekeeper (see egress.py).
         self.egress = EgressProxy(resolver_factory, exempt=exempt).start()
         self._pw = None
@@ -201,13 +215,22 @@ class Sandbox:
         self.ensure()
         cap = Capture(url=url)
         t0 = time.monotonic()
-        self.egress.begin_scan()
+        upstream = None
+        if self.route is not None:
+            try:
+                upstream = self.route()
+            except privacy.Unavailable as e:
+                # Fail closed: Hide my IP is on but cannot be used, so the page is not opened at all.
+                self.egress.begin_scan()
+                return Capture(url=url, final_url=url, status="failed", error=str(e), route="unavailable")
+        self.egress.begin_scan(upstream)
+        cap.route = upstream.label if upstream else ""
         qdir = self.quarantine_dir / str(scan_id)
         binding = "__pg_" + secrets.token_hex(6)
 
         ctx = self.browser.new_context(
             accept_downloads=True, viewport={"width": 1366, "height": 768},
-            user_agent=UA, locale="en-US", timezone_id="Asia/Kolkata",
+            user_agent=UA, locale="en-US", timezone_id="UTC" if upstream else "Asia/Kolkata",
             service_workers="block", java_script_enabled=True, permissions=[],
             bypass_csp=False, ignore_https_errors=False)
         try:
@@ -220,6 +243,10 @@ class Sandbox:
 
             ctx.expose_binding(binding, on_report)
             ctx.add_init_script(HOOKS_JS.replace("__PG_BINDING__", binding))
+            if upstream:
+                # WebRTC talks UDP straight past any proxy, and a STUN server would then see this PC's
+                # real address. With Hide my IP on, pages get no WebRTC at all (every frame).
+                ctx.add_init_script(NO_WEBRTC_JS)
 
             page = ctx.new_page()
             main_navs: list[str] = []

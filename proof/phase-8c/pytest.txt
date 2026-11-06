@@ -1,0 +1,55 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.2.0, pluggy-1.7.0 -- D:\PhishGuard\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\PhishGuard
+plugins: anyio-4.16.0
+collecting ... collected 45 items
+
+tests/test_phase8c_privacy.py::test_proxy_addresses_that_are_accepted[socks5://127.0.0.1:1080-socks5-127.0.0.1-1080-] PASSED [  2%]
+tests/test_phase8c_privacy.py::test_proxy_addresses_that_are_accepted[socks5h://me:p%40ss@proxy.example.net:1080-socks5-proxy.example.net-1080-me] PASSED [  4%]
+tests/test_phase8c_privacy.py::test_proxy_addresses_that_are_accepted[http://10.0.0.5:3128-http-10.0.0.5-3128-] PASSED [  6%]
+tests/test_phase8c_privacy.py::test_proxy_addresses_that_are_refused[] PASSED [  8%]
+tests/test_phase8c_privacy.py::test_proxy_addresses_that_are_refused[127.0.0.1:1080] PASSED [ 11%]
+tests/test_phase8c_privacy.py::test_proxy_addresses_that_are_refused[socks4://1.2.3.4:1080] PASSED [ 13%]
+tests/test_phase8c_privacy.py::test_proxy_addresses_that_are_refused[https://p.example:443] PASSED [ 15%]
+tests/test_phase8c_privacy.py::test_proxy_addresses_that_are_refused[socks5://host] PASSED [ 17%]
+tests/test_phase8c_privacy.py::test_proxy_addresses_that_are_refused[socks5://host:99999] PASSED [ 20%]
+tests/test_phase8c_privacy.py::test_proxy_addresses_that_are_refused[socks5://h:1080/path] PASSED [ 22%]
+tests/test_phase8c_privacy.py::test_proxy_addresses_that_are_refused[socks5://h:1080 ; rm] PASSED [ 24%]
+tests/test_phase8c_privacy.py::test_proxy_addresses_that_are_refused[ftp://h:21] PASSED [ 26%]
+tests/test_phase8c_privacy.py::test_the_proxy_password_is_never_shown PASSED [ 28%]
+tests/test_phase8c_privacy.py::test_names_go_to_the_route_and_are_never_looked_up_here PASSED [ 31%]
+tests/test_phase8c_privacy.py::test_https_goes_through_the_route_as_a_name PASSED [ 33%]
+tests/test_phase8c_privacy.py::test_an_http_proxy_route_works_too PASSED [ 35%]
+tests/test_phase8c_privacy.py::test_route_down_means_nothing_is_sent_directly PASSED [ 37%]
+tests/test_phase8c_privacy.py::test_local_names_and_private_addresses_are_still_refused[http://localhost/] PASSED [ 40%]
+tests/test_phase8c_privacy.py::test_local_names_and_private_addresses_are_still_refused[http://printer/] PASSED [ 42%]
+tests/test_phase8c_privacy.py::test_local_names_and_private_addresses_are_still_refused[http://nas.local/] PASSED [ 44%]
+tests/test_phase8c_privacy.py::test_local_names_and_private_addresses_are_still_refused[http://router.home.arpa/] PASSED [ 46%]
+tests/test_phase8c_privacy.py::test_local_names_and_private_addresses_are_still_refused[http://10.1.2.3/] PASSED [ 48%]
+tests/test_phase8c_privacy.py::test_local_names_and_private_addresses_are_still_refused[http://192.168.1.1/] PASSED [ 51%]
+tests/test_phase8c_privacy.py::test_local_names_and_private_addresses_are_still_refused[http://[::1]/] PASSED [ 53%]
+tests/test_phase8c_privacy.py::test_tor_gets_a_new_circuit_for_every_check PASSED [ 55%]
+tests/test_phase8c_privacy.py::test_without_a_route_nothing_changes PASSED [ 57%]
+tests/test_phase8c_privacy.py::test_a_whole_page_loads_only_through_the_route PASSED [ 60%]
+tests/test_phase8c_privacy.py::test_the_page_sees_a_neutral_time_zone_and_no_webrtc_addresses PASSED [ 62%]
+tests/test_phase8c_privacy.py::test_route_unavailable_means_the_page_is_never_opened PASSED [ 64%]
+tests/test_phase8c_privacy.py::test_tor_download_is_checked_and_only_three_files_are_unpacked PASSED [ 66%]
+tests/test_phase8c_privacy.py::test_a_tampered_tor_download_is_thrown_away PASSED [ 68%]
+tests/test_phase8c_privacy.py::test_a_tor_bundle_with_a_link_instead_of_tor_exe_is_refused PASSED [ 71%]
+tests/test_phase8c_privacy.py::test_the_pinned_tor_download_is_the_official_one PASSED [ 73%]
+tests/test_phase8c_privacy.py::test_tor_is_started_privately_and_used_when_ready PASSED [ 75%]
+tests/test_phase8c_privacy.py::test_tor_not_downloaded_means_checks_fail_closed PASSED [ 77%]
+tests/test_phase8c_privacy.py::test_warp_not_installed PASSED            [ 80%]
+tests/test_phase8c_privacy.py::test_warp_installed_but_not_in_proxy_mode PASSED [ 82%]
+tests/test_phase8c_privacy.py::test_warp_in_proxy_mode_is_found_on_its_port PASSED [ 84%]
+tests/test_phase8c_privacy.py::test_warp_chosen_but_disconnected_fails_closed PASSED [ 86%]
+tests/test_phase8c_privacy.py::test_privacy_is_off_by_default PASSED     [ 88%]
+tests/test_phase8c_privacy.py::test_saving_a_custom_proxy PASSED         [ 91%]
+tests/test_phase8c_privacy.py::test_the_test_button_shows_the_address_sites_see PASSED [ 93%]
+tests/test_phase8c_privacy.py::test_the_test_button_explains_when_the_route_is_down PASSED [ 95%]
+tests/test_phase8c_privacy.py::test_only_admins_change_privacy PASSED    [ 97%]
+tests/test_phase8c_privacy.py::test_real_tor_hides_the_address SKIPPED   [100%]
+
+--------- generated xml file: D:\PhishGuard\proof\phase-8c\junit.xml ----------
+======================== 44 passed, 1 skipped in 9.76s ========================

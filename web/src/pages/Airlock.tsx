@@ -153,6 +153,9 @@ export function Airlock({ sid }: { sid: number }) {
   const danger = level === "danger"
   const removed = d?.params_removed?.length ?? 0
   const timing = d?.page?.timings?.total as number | undefined
+  // Hide my IP: which route the sandbox used ("Tor", "Cloudflare WARP", "Your proxy"), if any.
+  const route = (d?.page?.route as string | undefined) || ""
+  const via = route && route !== "unavailable" ? ` through ${route === "Your proxy" ? "your proxy" : route}` : ""
   const isBlocked = blocked || d?.decision === "blocked"
 
   return (
@@ -192,7 +195,11 @@ export function Airlock({ sid }: { sid: number }) {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Sandbox view</CardTitle>
-            {timing ? <CardDescription>Opened in {timing.toFixed(1)} s</CardDescription> : null}
+            {timing ? (
+              <CardDescription>
+                Opened in {timing.toFixed(1)} s{via}
+              </CardDescription>
+            ) : null}
           </CardHeader>
           <CardContent>
             {d?.screenshot_url ? (
@@ -523,6 +530,14 @@ function Panels({ d }: { d: Scan }) {
             ["Final address", <Mono>{d.final_url}</Mono>],
             ["Page title", d.title || "–"],
             ["HTTP status", String(p.http_status || "–")],
+            [
+              "Your IP address",
+              p.route === "unavailable"
+                ? "Not sent: Hide my IP could not connect, so the page was not opened"
+                : p.route
+                  ? `Hidden: the site saw ${p.route === "Your proxy" ? "your proxy" : p.route}`
+                  : "Not hidden (Hide my IP is off)",
+            ],
             ["Certificate", tls.issuer ? `${tls.subjectName} · issued by ${tls.issuer}` : "–"],
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             ["Blocked by PhishGuard", <Tags items={(p.blocked || []).map((b: any) => `${b.url} (${b.reason})`)} />],

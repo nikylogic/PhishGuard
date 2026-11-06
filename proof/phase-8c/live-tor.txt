@@ -1,0 +1,4 @@
+Tor 16.0, connected in 9.8 s
+check.torproject.org through Tor: IsTor=True, a Tor exit address
+check.torproject.org directly:    IsTor=False, this PC's address
+The two addresses differ: True
