@@ -303,3 +303,51 @@ def test_registered_command_really_runs_the_launcher(reg_base, inst):
     p = subprocess.run(cmd + " --no-window", env={**os.environ, **inst.env}, capture_output=True, text=True, timeout=20)
     assert p.returncode == 2                                     # refused, as it must be
     assert "refused" in (inst.dir / "launcher.log").read_text(encoding="utf-8")
+
+
+def _choose(base, scheme, progid, latest):
+    root = rf"{base}\Microsoft\Windows\Shell\Associations\UrlAssociations\{scheme}"
+    path = rf"{root}\UserChoiceLatest\ProgId" if latest else rf"{root}\UserChoice"
+    with winreg.CreateKey(winreg.HKEY_CURRENT_USER, path) as k:
+        winreg.SetValueEx(k, "ProgId", 0, winreg.REG_SZ, progid)
+
+
+def test_default_is_read_from_the_newer_windows_11_key(reg_base):
+    """Newer Windows 11 keeps the choice under UserChoiceLatest\ProgId and leaves UserChoice stale
+    (seen on a real PC: UserChoice said Edge while links went to PhishGuard)."""
+    _choose(reg_base, "http", "MSEdgeHTM", latest=False)
+    assert not registry.is_default(reg_base)
+    for scheme in ("http", "https"):
+        _choose(reg_base, scheme, "PhishGuardURL", latest=True)
+    assert registry.chosen("http", reg_base) == "PhishGuardURL"
+    assert registry.is_default(reg_base)
+
+
+def test_old_windows_choice_still_counts(reg_base):
+    for scheme in ("http", "https"):
+        _choose(reg_base, scheme, "PhishGuardURL", latest=False)
+    assert registry.is_default(reg_base)
+
+
+def test_installed_app_sends_links_to_phishguard_exe_not_the_engine(reg_base, monkeypatch):
+    """The Make default button runs inside PhishGuardEngine.exe; the link command must still name
+    PhishGuard.exe, and an old registration that named the engine is repaired."""
+    engine = r"C:\Apps\PhishGuard\PhishGuardEngine.exe"
+    monkeypatch.setattr(registry, "FROZEN", True)
+    monkeypatch.setattr(registry.sys, "executable", engine)
+    assert registry.command() == r'"C:\Apps\PhishGuard\PhishGuard.exe" "%1"'
+    k = registry.register(reg_base)
+    assert read(rf"{k['progid']}\shell\open\command") == r'"C:\Apps\PhishGuard\PhishGuard.exe" "%1"'
+    assert "Engine" not in read(rf"{k['client']}\DefaultIcon")
+    # An older build wrote the engine here: repair() puts it right, once.
+    with winreg.CreateKey(winreg.HKEY_CURRENT_USER, rf"{k['progid']}\shell\open\command") as c:
+        winreg.SetValueEx(c, None, 0, winreg.REG_SZ, f'"{engine}" "%1"')
+    assert registry.repair(reg_base) is True
+    assert read(rf"{k['progid']}\shell\open\command") == r'"C:\Apps\PhishGuard\PhishGuard.exe" "%1"'
+    assert registry.repair(reg_base) is False
+
+
+def test_repair_does_nothing_when_not_registered(reg_base, monkeypatch):
+    monkeypatch.setattr(registry, "FROZEN", True)
+    assert registry.repair(reg_base) is False
+    assert registry.dump(reg_base) == []

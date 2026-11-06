@@ -26,13 +26,23 @@ def default_pythonw() -> str:
     return str(pyw if pyw.exists() else exe)
 
 
-FROZEN = bool(getattr(sys, "frozen", False))      # running as the installed PhishGuard.exe
+FROZEN = bool(getattr(sys, "frozen", False))      # running from the installed app
+
+
+def app_exe() -> str:
+    """The installed PhishGuard.exe. The "Make default" button runs inside PhishGuardEngine.exe,
+    so this must not be sys.executable: links have to go to PhishGuard.exe, never to the engine."""
+    return str(Path(sys.executable).with_name(f"{APP}.exe"))
 
 
 def command(pythonw: str | None = None, script: Path = LAUNCHER) -> str:
     if FROZEN and pythonw is None:
-        return f'"{sys.executable}" "%1"'
+        return f'"{app_exe()}" "%1"'
     return f'"{pythonw or default_pythonw()}" "{script}" "%1"'
+
+
+def icon_exe(pythonw: str | None = None) -> str:
+    return app_exe() if FROZEN and pythonw is None else (pythonw or default_pythonw())
 
 
 def keys(base: str = "Software") -> dict[str, str]:
@@ -54,7 +64,7 @@ def _set(path: str, values: dict[str, str]) -> None:
 def register(base: str = "Software", pythonw: str | None = None, script: Path = LAUNCHER) -> dict[str, str]:
     k = keys(base)
     cmd = command(pythonw, script)
-    icon = f'"{pythonw or default_pythonw()}",0'
+    icon = f'"{icon_exe(pythonw)}",0'
     # The link type Windows hands links to.
     _set(k["progid"], {"": "PhishGuard link", "URL Protocol": "", "FriendlyTypeName": "PhishGuard link"})
     _set(rf"{k['progid']}\DefaultIcon", {"": icon})
@@ -157,11 +167,28 @@ def is_registered(base: str = "Software") -> bool:
     return _read(keys(base)["registered"], APP) is not None
 
 
+def chosen(scheme: str, base: str = "Software") -> str | None:
+    """The app Windows hands this kind of link to. Newer Windows 11 keeps the choice under
+    UserChoiceLatest\\ProgId and leaves the old UserChoice key stale; older Windows uses UserChoice.
+    Only the Settings app can write either, so we only ever read them."""
+    root = rf"{base}\Microsoft\Windows\Shell\Associations\UrlAssociations\{scheme}"
+    return _read(rf"{root}\UserChoiceLatest\ProgId", "ProgId") or _read(rf"{root}\UserChoice", "ProgId")
+
+
 def is_default(base: str = "Software") -> bool:
-    """True when Windows hands both http and https links to PhishGuard. Windows keeps the user's
-    choice under UserChoice; only the Settings app can write it, so we only ever read it."""
-    root = rf"{base}\Microsoft\Windows\Shell\Associations\UrlAssociations"
-    return all(_read(rf"{root}\{s}\UserChoice", "ProgId") == PROGID for s in ("http", "https"))
+    """True when Windows hands both http and https links to PhishGuard."""
+    return all(chosen(s, base) == PROGID for s in ("http", "https"))
+
+
+def repair(base: str = "Software") -> bool:
+    """If PhishGuard is registered but its link command is out of date (an older build pointed it
+    at the engine, or the app moved), write it again. Returns True when something was fixed."""
+    if not (FROZEN and is_registered(base)):
+        return False
+    if _read(rf"{keys(base)['progid']}\shell\open\command", "") == command():
+        return False
+    register(base)
+    return True
 
 
 SETTINGS_PAGE = f"ms-settings:defaultapps?registeredAppUser={APP}"   # opens PhishGuard's own page
@@ -179,7 +206,7 @@ def make_shortcut(path: Path | None = None, pythonw: str | None = None, script: 
     path.parent.mkdir(parents=True, exist_ok=True)
     # Values go in through environment variables, so no path is ever pasted into the script text.
     if FROZEN and pythonw is None:      # PhishGuard.exe with no arguments opens the dashboard
-        exe, args, workdir = sys.executable, "", str(Path(sys.executable).parent)
+        exe, args, workdir = app_exe(), "", str(Path(app_exe()).parent)
     else:
         exe, args, workdir = pythonw or default_pythonw(), f'"{script}" --dashboard', str(ROOT)
     env = dict(os.environ, PG_LNK=str(path), PG_EXE=exe, PG_ARGS=args, PG_DIR=workdir)

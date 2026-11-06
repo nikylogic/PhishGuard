@@ -46,6 +46,11 @@ def main(argv: list[str] | None = None) -> int:
     if args[:1] == ["--stop"]:
         stop(instance)
         return 0
+    try:                                              # fix a link command left by an older build
+        import registry                               # noqa: PLC0415
+        registry.repair()
+    except Exception:                                 # noqa: BLE001  never block opening a link
+        pass
     import pglaunch                                   # noqa: PLC0415
     if not args:
         return pglaunch.main([argv[0], "--dashboard"])
