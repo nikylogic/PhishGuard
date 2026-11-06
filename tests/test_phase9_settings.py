@@ -213,3 +213,20 @@ def test_phishing_lists_status_has_its_own_address(env):
 
 def test_version_is_shown(env):
     assert client(env).get("/api/about").get_json() == {"version": __version__}
+
+
+def test_dashboard_days_follow_the_pcs_clock_not_utc(env):
+    """Checks are stored in UTC. One made a minute after local midnight is 'today' for the user,
+    even where UTC is still on yesterday (00:00-05:30 in India)."""
+    con = connect(str(env.inst / "phishguard.db"))
+    con.execute("INSERT INTO scans(url, domain, source, status, level, created_at) VALUES "
+                "('https://a.example/', 'a.example', 'manual', 'done', 'danger', "
+                "datetime('now', 'localtime', 'start of day', '+1 minute', 'utc'))")
+    con.commit()
+    today = con.execute("SELECT date('now', 'localtime')").fetchone()[0]
+    con.close()
+    s = client(env).get("/api/stats").get_json()
+    if s["today"] == 0:   # only possible in the first minute after midnight, when the check is in the future
+        pytest.skip("ran within a minute of local midnight")
+    assert s["today"] == 1 and s["stopped_today"] == 1
+    assert [d["day"] for d in s["days"]] == [today]

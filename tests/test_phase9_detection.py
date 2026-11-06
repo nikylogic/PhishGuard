@@ -315,6 +315,23 @@ def test_a_scam_domain_naming_the_brand_is_not_a_news_site():
     assert "IMPERSONATION_LOGIN" in codes(analyse(c, INTEL))
 
 
+@pytest.mark.parametrize("url", ["https://bank.top/", "https://secure-login.top/", "https://netbanking24.in/",
+                                 "https://my-account-verify.xyz/"])
+def test_a_name_made_of_everyday_words_does_not_name_the_site(url):
+    """bank.top titled "HDFC Bank NetBanking" contains its own name ("bank") in the title, but
+    that is the brand's title, not the site's own name: still an impersonation."""
+    c = page(url, title="HDFC Bank NetBanking - Secure Login", inputs=PASSWORD)
+    assert "IMPERSONATION_LOGIN" in codes(analyse(c, INTEL))
+
+
+def test_a_real_site_naming_itself_still_counts():
+    from phishguard.identity import only_generic
+    assert only_generic("securelogin") and only_generic("bank24") and not only_generic("moneycontrol2x")
+    c = page("https://bankbazaar-news.in/", title="HDFC Bank raises FD rates | Bankbazaarnews",
+             text="HDFC Bank raised its fixed deposit rates today.")
+    assert not {"IMPERSONATION_LOGIN", "IMPERSONATION_ID"} & codes(analyse(c, INTEL))
+
+
 # --- AI Guard: the model alone is not enough --------------------------------------------
 
 class _Guard:

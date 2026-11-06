@@ -18,7 +18,13 @@ const chartConfig = {
 const RANGES = { "90d": ["Last 3 months", 90], "30d": ["Last 30 days", 30], "7d": ["Last 7 days", 7] } as const
 type Range = keyof typeof RANGES
 
-const fmt = (v: string) => new Date(v + "T00:00:00Z").toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" })
+const fmt = (v: string) => new Date(v + "T12:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" })
+
+// The PC's own calendar day (the engine groups by local time too), so a check at 1 a.m. in India
+// counts for today, not for yesterday in UTC.
+function localDay(t: Date) {
+  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`
+}
 
 export function ChartAreaInteractive({ stats }: { stats: Stats | null }) {
   const isMobile = useIsMobile()
@@ -28,12 +34,14 @@ export function ChartAreaInteractive({ stats }: { stats: Stats | null }) {
     if (isMobile) setTimeRange("7d")
   }, [isMobile])
 
-  // One point per day (UTC, like the database), with empty days filled in as zero.
+  // One point per local day, with empty days filled in as zero.
   const data = React.useMemo(() => {
     const n = RANGES[timeRange][1]
     const byDay = new Map((stats?.days ?? []).map((d) => [d.day, d]))
     return Array.from({ length: n }, (_, i) => {
-      const day = new Date(Date.now() - (n - 1 - i) * 86400000).toISOString().slice(0, 10)
+      const t = new Date()
+      t.setDate(t.getDate() - (n - 1 - i))
+      const day = localDay(t)
       const d = byDay.get(day)
       return { date: day, clear: d?.clear ?? 0, caution: d?.caution ?? 0, danger: d?.danger ?? 0 }
     })

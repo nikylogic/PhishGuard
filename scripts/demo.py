@@ -7,6 +7,7 @@ sandbox at them, and also inspects a few real public websites. Logins:
     admin / airlock-admin-1        analyst / airlock-analyst-1
 Nothing here touches your real PhishGuard data: it uses the folder instance-demo/.
 """
+import os
 import shutil
 import sys
 import time
@@ -26,6 +27,7 @@ from phishguard.worker import ScanWorker  # noqa: E402
 from tests.sites.server import FakeResolver, FakeSites  # noqa: E402
 
 INST = ROOT / "instance-demo"
+PORT = int(os.environ.get("PHISHGUARD_PORT") or 5157)
 
 DEMO = [
     ("plain.test", "/plain"),
@@ -79,8 +81,8 @@ def main(fresh=True):
         while con.execute("SELECT COUNT(*) FROM scans WHERE status IN ('queued', 'running')").fetchone()[0]:
             time.sleep(1)
     con.close()
-    print("PhishGuard demo at http://127.0.0.1:5157  (admin / airlock-admin-1)", flush=True)
-    serve(app, host="127.0.0.1", port=5157, threads=8, ident="PhishGuard")
+    print(f"PhishGuard demo at http://127.0.0.1:{PORT}  (admin / airlock-admin-1)", flush=True)
+    serve(app, host="127.0.0.1", port=PORT, threads=8, ident="PhishGuard")
 
 
 if __name__ == "__main__":

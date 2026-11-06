@@ -187,6 +187,30 @@ def looks_like_login(cap: dict) -> bool:
 
 # --- the findings ---------------------------------------------------------------------------
 
+# Words scam domains are built from. A site name made only of these is not a name of its own.
+GENERIC_WORDS = sorted({
+    "bank", "banking", "netbanking", "net", "online", "secure", "security", "safe", "login", "logon", "signin",
+    "sign", "in", "auth", "verify", "verification", "account", "accounts", "acc", "update", "portal", "my",
+    "web", "www", "support", "service", "services", "help", "helpdesk", "customer", "care", "kyc", "pay",
+    "payment", "payments", "wallet", "reward", "rewards", "offer", "offers", "claim", "gift", "bonus", "alert",
+    "notice", "info", "center", "centre", "app", "apps", "mobile", "id", "user", "client", "access", "official",
+    "india", "global", "direct", "home", "page", "site", "e", "i", "m", "the", "and", "now", "today", "card",
+    "cards", "credit", "debit", "upi", "refund", "tax", "income", "loan", "cash", "money", "finance",
+}, key=len, reverse=True)
+
+
+def only_generic(name: str) -> bool:
+    """True when `name` splits completely into GENERIC_WORDS (and digits): 'securelogin', 'bank24'."""
+    name = re.sub(r"\d+", "", name)
+    ok = [True] + [False] * len(name)
+    for i in range(len(name)):
+        if ok[i]:
+            for w in GENERIC_WORDS:
+                if name.startswith(w, i):
+                    ok[i + len(w)] = True
+    return ok[-1]
+
+
 def identity_findings(cap: dict, facts: dict | None = None) -> list[Finding]:
     facts = facts or {}
     final = cap.get("final_url") or cap.get("url") or ""
@@ -203,7 +227,10 @@ def identity_findings(cap: dict, facts: dict | None = None) -> list[Finding]:
 
     # 1-3. The brand the page presents itself as, against where it really is.
     own = re.sub(r"[^a-z0-9]", "", reg.split(".")[0])
-    self_named = len(own) >= 4 and own in re.sub(r"[^a-z0-9]", "", f"{cap.get('title', '')} {cap.get('site_name', '')}".lower())
+    # A name made only of everyday words (bank.test, secure-login.top) appears in any bank's
+    # title, so it says nothing about who runs the site and never counts as naming itself.
+    self_named = (len(own) >= 4 and not only_generic(own)
+                  and own in re.sub(r"[^a-z0-9]", "", f"{cap.get('title', '')} {cap.get('site_name', '')}".lower()))
     for c in claims(cap, min_points=2 if strong_ask else 3)[:1]:
         b = intel.BRAND_INFO[c.brand]
         on_own_site = reg in b["domains"] and not free

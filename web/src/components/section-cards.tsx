@@ -12,7 +12,12 @@ export type Stats = {
   top_dangerous: { domain: string; n: number }[]
 }
 
-const yesterdayKey = () => new Date(Date.now() - 86400000).toISOString().slice(0, 10)
+// Yesterday on the PC's own calendar (the engine groups days by local time).
+const yesterdayKey = () => {
+  const t = new Date()
+  t.setDate(t.getDate() - 1)
+  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`
+}
 
 function Stat({ label, value, note, tone }: { label: string; value: React.ReactNode; note: string; tone?: string }) {
   return (
