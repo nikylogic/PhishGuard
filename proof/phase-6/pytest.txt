@@ -1,0 +1,57 @@
+PhishGuard - Phase 6 test run
+Started : 2026-11-06 15:00:21
+Finished: 2026-11-06 15:00:56
+Python  : 3.12.10 on Windows 11
+Command : pytest -v tests/test_phase6_api.py
+Exit    : 0
+==============================================================================
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.2.0, pluggy-1.7.0 -- D:\PhishGuard\.venv\Scripts\python.exe
+rootdir: D:\PhishGuard
+plugins: anyio-4.16.0
+collecting ... collected 41 items
+
+tests/test_phase6_api.py::test_login_and_me PASSED                       [  2%]
+tests/test_phase6_api.py::test_wrong_password PASSED                     [  4%]
+tests/test_phase6_api.py::test_five_failures_lock_the_account PASSED     [  7%]
+tests/test_phase6_api.py::test_passwords_are_stored_hashed PASSED        [  9%]
+tests/test_phase6_api.py::test_logout PASSED                             [ 12%]
+tests/test_phase6_api.py::test_post_without_csrf_token_is_refused PASSED [ 14%]
+tests/test_phase6_api.py::test_post_with_wrong_csrf_token_is_refused PASSED [ 17%]
+tests/test_phase6_api.py::test_cross_site_origin_is_refused PASSED       [ 19%]
+tests/test_phase6_api.py::test_null_origin_is_refused PASSED             [ 21%]
+tests/test_phase6_api.py::test_foreign_host_header_is_refused_dns_rebinding PASSED [ 24%]
+tests/test_phase6_api.py::test_launcher_token_works_without_login PASSED [ 26%]
+tests/test_phase6_api.py::test_wrong_launcher_token_is_refused PASSED    [ 29%]
+tests/test_phase6_api.py::test_role_matrix[GET /api/scans] PASSED        [ 31%]
+tests/test_phase6_api.py::test_role_matrix[GET /api/stats] PASSED        [ 34%]
+tests/test_phase6_api.py::test_role_matrix[GET /api/lists] PASSED        [ 36%]
+tests/test_phase6_api.py::test_role_matrix[POST /api/lists] PASSED       [ 39%]
+tests/test_phase6_api.py::test_role_matrix[POST /api/guard] PASSED       [ 41%]
+tests/test_phase6_api.py::test_role_matrix[POST /api/scan] PASSED        [ 43%]
+tests/test_phase6_api.py::test_role_matrix[GET /api/settings] PASSED     [ 46%]
+tests/test_phase6_api.py::test_role_matrix[POST /api/settings] PASSED    [ 48%]
+tests/test_phase6_api.py::test_role_matrix[GET /api/users] PASSED        [ 51%]
+tests/test_phase6_api.py::test_role_matrix[POST /api/users] PASSED       [ 53%]
+tests/test_phase6_api.py::test_role_matrix[GET /api/audit] PASSED        [ 56%]
+tests/test_phase6_api.py::test_scan_flow_phishing_page PASSED            [ 58%]
+tests/test_phase6_api.py::test_unsafe_link_is_refused PASSED             [ 60%]
+tests/test_phase6_api.py::test_failed_capture_is_never_stamped_clear PASSED [ 63%]
+tests/test_phase6_api.py::test_hidden_injection_found_by_ai_guard PASSED [ 65%]
+tests/test_phase6_api.py::test_danger_needs_confirmation_and_uses_the_browser_exe PASSED [ 68%]
+tests/test_phase6_api.py::test_open_clean_strips_tracking PASSED         [ 70%]
+tests/test_phase6_api.py::test_block_decision_blocks_future_scans_instantly PASSED [ 73%]
+tests/test_phase6_api.py::test_allowlist_cache_file_follows_the_list PASSED [ 75%]
+tests/test_phase6_api.py::test_ticket_gives_one_window_access_to_one_scan PASSED [ 78%]
+tests/test_phase6_api.py::test_screenshot_route_cannot_escape PASSED     [ 80%]
+tests/test_phase6_api.py::test_every_decision_is_audited PASSED          [ 82%]
+tests/test_phase6_api.py::test_api_key_is_never_shown_back PASSED        [ 85%]
+tests/test_phase6_api.py::test_unknown_setting_and_bad_provider_refused PASSED [ 87%]
+tests/test_phase6_api.py::test_user_rules PASSED                         [ 90%]
+tests/test_phase6_api.py::test_llm_can_raise_a_scan PASSED               [ 92%]
+tests/test_phase6_api.py::test_llm_injected_reply_cannot_lower_a_scan PASSED [ 95%]
+tests/test_phase6_api.py::test_restart_closes_unfinished_scans PASSED    [ 97%]
+tests/test_phase6_api.py::test_browser_never_receives_non_web_links PASSED [100%]
+
+---------- generated xml file: D:\PhishGuard\proof\phase-6\junit.xml ----------
+============================= 41 passed in 33.07s =============================

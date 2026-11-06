@@ -7,7 +7,8 @@ point it at a temporary folder.
 import secrets
 from pathlib import Path
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
+from werkzeug.exceptions import HTTPException
 
 from . import db
 
@@ -57,6 +58,37 @@ def create_app(overrides: dict | None = None) -> Flask:
 
     db.init_db(app.config["DATABASE"])
     app.teardown_appcontext(db.close_db)
+
+    from . import auth
+    from .api import auth_bp, bp as api_bp
+    app.before_request(auth.check_request)
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(api_bp)
+    try:
+        from .views import bp as views_bp
+        app.register_blueprint(views_bp)
+    except ImportError:
+        pass
+
+    @app.errorhandler(HTTPException)
+    def http_error(e):
+        if request.path.startswith("/api/") or request.path.startswith("/shots/"):
+            return jsonify(error=e.description or e.name), e.code
+        return e
+
+    # The scan service: sandbox worker + judging pipeline. Tests pass their own.
+    if "SERVICE" in overrides:
+        service = overrides["SERVICE"]
+    else:
+        from .services import ScanService
+        service = ScanService(app.config["DATABASE"], instance)
+        if app.config.get("START_WORKER"):
+            from .sandbox import Sandbox
+            from .worker import ScanWorker
+            service.worker = ScanWorker(
+                lambda: Sandbox(instance / "shots", instance / "quarantine"),
+                on_done=service.on_capture, on_start=service.mark_running).start()
+    app.extensions["pg_service"] = service
 
     @app.after_request
     def security_headers(resp):

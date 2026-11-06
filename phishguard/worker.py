@@ -17,11 +17,12 @@ _STOP = object()
 
 
 class ScanWorker:
-    def __init__(self, sandbox_factory, on_done=None):
+    def __init__(self, sandbox_factory, on_done=None, on_start=None):
         """sandbox_factory() builds a Sandbox inside the worker thread.
         on_done(scan_id, capture) is called on the worker thread after each job."""
         self._factory = sandbox_factory
         self._on_done = on_done
+        self._on_start = on_start
         self._q: queue.Queue = queue.Queue()
         self._thread = threading.Thread(target=self._run, name="pg-sandbox", daemon=True)
         self.sandbox: Sandbox | None = None
@@ -65,6 +66,11 @@ class ScanWorker:
                 except Exception as e:   # noqa: BLE001
                     fut.set_exception(e)
                 continue
+            if self._on_start:
+                try:
+                    self._on_start(scan_id)
+                except Exception:   # noqa: BLE001
+                    log.exception("on_start failed for scan %s", scan_id)
             cap = self._capture_with_retry(target, scan_id)
             self.jobs_done += 1
             if self._on_done:

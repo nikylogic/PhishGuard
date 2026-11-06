@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS scans (
     decision     TEXT NOT NULL DEFAULT 'pending'
                  CHECK (decision IN ('pending', 'opened', 'blocked', 'ignored')),
     error        TEXT,
+    ticket       TEXT,
     user_id      INTEGER REFERENCES users(id) ON DELETE SET NULL,
     created_at   TEXT NOT NULL DEFAULT (datetime('now')),
     finished_at  TEXT

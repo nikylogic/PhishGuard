@@ -12,7 +12,7 @@ from phishguard import create_app
 
 
 def main():
-    overrides = {}
+    overrides = {"START_WORKER": os.environ.get("PHISHGUARD_NO_WORKER") != "1"}
     if os.environ.get("PHISHGUARD_INSTANCE"):
         overrides["INSTANCE_DIR"] = os.environ["PHISHGUARD_INSTANCE"]
     if os.environ.get("PHISHGUARD_PORT"):

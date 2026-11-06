@@ -17,7 +17,7 @@ EXPECTED_COLUMNS = {
     "scans": {"id", "url", "final_url", "domain", "source", "status", "score", "level",
               "s_phishing", "s_malware", "s_tracking", "s_abuse", "title", "screenshot",
               "redirect_json", "page_json", "llm_json", "guard_score", "decision", "error",
-              "user_id", "created_at", "finished_at"},
+              "ticket", "user_id", "created_at", "finished_at"},
     "findings": {"id", "scan_id", "stage", "category", "code", "weight", "message"},
     "downloads": {"id", "scan_id", "filename", "declared_type", "real_type", "size",
                   "sha256", "verdict", "quarantine_path"},
@@ -119,7 +119,7 @@ def _lan_ip():
 
 def test_real_server_listens_on_loopback_only(tmp_path):
     port = _free_port()
-    env = dict(os.environ, PHISHGUARD_INSTANCE=str(tmp_path / "inst"), PHISHGUARD_PORT=str(port))
+    env = dict(os.environ, PHISHGUARD_INSTANCE=str(tmp_path / "inst"), PHISHGUARD_PORT=str(port), PHISHGUARD_NO_WORKER="1")
     proc = subprocess.Popen([sys.executable, str(ROOT / "run.py")], env=env, cwd=ROOT,
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     try:
