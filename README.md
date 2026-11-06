@@ -10,7 +10,7 @@ A free, open-source link airlock for Windows. Click a link in any app (Discord, 
 
 [![Windows 11](https://img.shields.io/badge/Windows-11-0078D4?logo=windows&logoColor=white)](#install)
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](#build-from-source)
-[![Tests](https://img.shields.io/badge/tests-474%20passing-2ea44f)](#tested-on-real-phishing)
+[![Tests](https://img.shields.io/badge/tests-489%20passing-2ea44f)](#tested-on-real-phishing)
 [![Runs locally](https://img.shields.io/badge/runs-100%25%20on%20your%20PC-555)](#privacy)
 [![Cost](https://img.shields.io/badge/cost-free-2ea44f)](#install)
 
@@ -126,7 +126,7 @@ The danger examples are PhishGuard's built-in test sites (`bank.test`, `files.te
 3. Open PhishGuard, go to **Settings → General** and press **Make PhishGuard my default browser**. Windows opens its Settings on PhishGuard's page; press **Set default**.
 4. Choose **your real browser** in Settings → General. Safe links open there.
 
-PhishGuard starts quietly with Windows (you can turn this off), so the first link you click is checked straight away.
+PhishGuard starts quietly with Windows (you can turn this off), so the first link you click is checked straight away. While it runs, its shield icon sits in the notification area next to the clock: click it to open PhishGuard, or right-click to check a link you copied, switch Start with Windows on or off, or quit.
 
 > **Windows SmartScreen** may warn that the installer is from an unknown publisher, because it is not code-signed yet. Choose *More info → Run anyway*, or build it yourself from source.
 

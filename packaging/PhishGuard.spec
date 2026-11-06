@@ -23,7 +23,7 @@ NEVER = ["torch", "transformers", "tokenizers", "pandas", "matplotlib", "pytest"
 app = Analysis(
     [str(ROOT / "launcher" / "appmain.py")],
     pathex=PATHS,
-    hiddenimports=["pglaunch", "registry"],
+    hiddenimports=["pglaunch", "registry", "tray"],
     excludes=NEVER + ["phishguard", "flask", "werkzeug", "waitress", "playwright", "sklearn", "scipy", "numpy",
                       "joblib", "tldextract", "requests", "run"],
 )
@@ -41,7 +41,7 @@ datas = [
 ] + collect_data_files("tldextract")
 
 # The AI Guard model is loaded from a file, so PyInstaller cannot see which scikit-learn parts it needs.
-hidden = ["run", "registry", "sklearn.pipeline", "sklearn.linear_model", "sklearn.feature_extraction.text",
+hidden = ["run", "registry", "tray", "sklearn.pipeline", "sklearn.linear_model", "sklearn.feature_extraction.text",
           "sklearn.preprocessing"] + collect_submodules(
     "phishguard", filter=lambda name: name not in ("phishguard.guard.train", "phishguard.guard.distil"))
 

@@ -329,7 +329,9 @@ def open_window(target, cfg: dict, popen=subprocess.Popen) -> None:
         light = light_theme()
         controls = WindowControls()
         first = None if callable(target) else target
-        window = webview.create_window("PhishGuard", url=first, html=None if first else splash(light),
+        # The dashboard is titled "PhishGuard" (the tray and a second launch find it by that name);
+        # each link check gets its own title, so it is never mistaken for the dashboard.
+        window = webview.create_window(cfg.get("title", "PhishGuard"), url=first, html=None if first else splash(light),
                                        width=1220, height=880, min_size=(MIN_W, MIN_H), frameless=True,
                                        easy_drag=False, js_api=controls, text_select=True,
                                        background_color="#ffffff" if light else "#0a0a0a")
@@ -366,6 +368,18 @@ def emit(text: str, out, cfg: dict) -> None:
         log(cfg, f"address: {text}")
 
 
+def focus_existing(env=os.environ) -> bool:
+    """A Windows app opens once: if the dashboard is already open, bring it forward instead.
+    Tests (PHISHGUARD_NO_DIALOGS) never look for, or touch, a real PhishGuard window."""
+    if env.get("PHISHGUARD_NO_DIALOGS") == "1":
+        return False
+    try:
+        import tray  # noqa: PLC0415 - standard library only
+        return tray.focus_window()
+    except Exception:  # noqa: BLE001
+        return False
+
+
 # --- main -------------------------------------------------------------------------------------
 
 def main(argv: list[str], env=os.environ, popen=subprocess.Popen, alert=message_box, window=open_window,
@@ -393,6 +407,8 @@ def main(argv: list[str], env=os.environ, popen=subprocess.Popen, alert=message_
         try:
             if no_window:
                 emit(dashboard(), out, cfg)
+            elif focus_existing(env):
+                log(cfg, "dashboard: brought the open window to the front")
             else:
                 window(dashboard, cfg)          # the window opens at once and shows "Starting PhishGuard…"
             return 0
@@ -417,6 +433,7 @@ def main(argv: list[str], env=os.environ, popen=subprocess.Popen, alert=message_
         if no_window:
             emit(airlock(), out, cfg)
         else:
+            cfg["title"] = f"PhishGuard · {host}"
             window(airlock, cfg)                # the window opens at once; the check fills it when ready
         return 0
     except Refused as e:
