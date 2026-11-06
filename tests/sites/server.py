@@ -152,7 +152,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, page("Windows Defender Alert", body, bg="#300"))
         if p == "/miner":
             wasm = "AGFzbQEAAAA="  # the smallest valid WebAssembly module
-            js = f"WebAssembly.instantiate(Uint8Array.from(atob('{wasm}'),c=>c.charCodeAt(0))).catch(()=>{{}}); for(let i=0;i<3;i++) eval('1+'+i);"
+            js = f"WebAssembly.instantiate(Uint8Array.from(atob('{wasm}'),c=>c.charCodeAt(0))).catch(()=>{{}}); for(let i=0;i<3;i++) eval('1+'+i); var cfg={{algo:'cryptonight', threads:4, throttle:0.3}}; function reportHashrate(h){{}}"
             return self._send(200, page("Loading game", f"<h1>Game is loading</h1><script>{js}</script>"))
 
         return self._send(404, page("Not found", "<p>not found</p>"))

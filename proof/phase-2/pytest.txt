@@ -1,6 +1,6 @@
 PhishGuard - Phase 2 test run
-Started : 2026-11-06 14:38:01
-Finished: 2026-11-06 14:39:16
+Started : 2026-11-06 14:47:04
+Finished: 2026-11-06 14:48:19
 Python  : 3.12.10 on Windows 11
 Command : pytest -v tests/test_phase2_sandbox.py
 Exit    : 0
@@ -34,4 +34,4 @@ tests/test_phase2_sandbox.py::test_worker_recovers_after_browser_crash PASSED [ 
 tests/test_phase2_sandbox.py::test_warm_scan_is_fast PASSED              [100%]
 
 ---------- generated xml file: D:\PhishGuard\proof\phase-2\junit.xml ----------
-======================== 22 passed in 74.25s (0:01:14) ========================
+======================== 22 passed in 74.59s (0:01:14) ========================

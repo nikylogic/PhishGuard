@@ -1,0 +1,3 @@
+# SHA-256 hashes of known malware files, one per line.
+# Fill this from a feed you are licensed to use:
+#   python scripts/import_intel.py bad_hash <file>

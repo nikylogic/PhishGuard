@@ -43,6 +43,18 @@ BRANDS = {
 }
 ALL_BRAND_DOMAINS = set().union(*BRANDS.values())
 
+# How each brand is written for people.
+BRAND_DISPLAY = {
+    "paypal": "PayPal", "youtube": "YouTube", "icloud": "iCloud", "linkedin": "LinkedIn",
+    "github": "GitHub", "whatsapp": "WhatsApp", "phonepe": "PhonePe", "hdfcbank": "HDFC Bank",
+    "icicibank": "ICICI Bank", "axisbank": "Axis Bank", "onlinesbi": "SBI", "irctc": "IRCTC",
+    "incometax": "Income Tax India", "dhl": "DHL", "fedex": "FedEx",
+}
+
+
+def brand_name(brand: str) -> str:
+    return BRAND_DISPLAY.get(brand, brand.capitalize())
+
 URL_SHORTENERS = {
     "bit.ly", "tinyurl.com", "t.co", "goo.gl", "is.gd", "ow.ly", "cutt.ly", "rebrand.ly",
     "buff.ly", "shorturl.at", "rb.gy", "t.ly", "s.id", "tiny.cc", "bit.do", "lnkd.in",
@@ -76,3 +88,68 @@ LURE_WORDS = {
     "account", "banking", "confirm", "password", "wallet", "kyc", "suspend", "suspended",
     "unlock", "billing", "invoice", "refund", "reward", "prize", "otp", "recover",
 }
+
+
+# --- lists loaded from files (and from the database's intel_lists table) ------------
+
+import re as _re
+from pathlib import Path as _Path
+
+DATA_DIR = _Path(__file__).with_name("data")
+FILES = {"tracker": "trackers.txt", "miner": "miners.txt",
+         "malware_url": "malware_urls.txt", "bad_hash": "bad_hashes.txt"}
+
+
+def _read_list(path: _Path) -> set[str]:
+    out = set()
+    if path.exists():
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.split("#", 1)[0].strip().lower()
+            if line:
+                out.add(line)
+    return out
+
+
+class Intel:
+    """All threat lists in memory, as sets, so every lookup is O(1)."""
+
+    def __init__(self, tracker=(), miner=(), malware_url=(), bad_hash=(), ip_logger=None):
+        self.sets = {
+            "tracker": set(tracker), "miner": set(miner),
+            "malware_url": set(malware_url), "bad_hash": {h.lower() for h in bad_hash},
+            "ip_logger": set(IP_LOGGERS if ip_logger is None else ip_logger),
+        }
+
+    @classmethod
+    def load(cls, data_dir=DATA_DIR, extra_rows=()):
+        """Load the bundled files, plus (kind, value) rows from the database."""
+        lists = {k: _read_list(_Path(data_dir) / f) for k, f in FILES.items()}
+        intel = cls(**lists)
+        for kind, value in extra_rows:
+            if kind in intel.sets:
+                intel.sets[kind].add(value.lower())
+        return intel
+
+    def count(self, kind):
+        return len(self.sets[kind])
+
+    def host_in(self, kind: str, host: str) -> str | None:
+        """Return the listed domain if host is it or one of its sub-domains."""
+        s = self.sets[kind]
+        labels = host.lower().rstrip(".").split(".")
+        for i in range(len(labels) - 1):
+            cand = ".".join(labels[i:])
+            if cand in s:
+                return cand
+        return None
+
+    def url_listed(self, url: str) -> bool:
+        """Malware list entries may be full URLs or bare hosts."""
+        s = self.sets["malware_url"]
+        if not s:
+            return False
+        u = url.lower()
+        if u in s or u.rstrip("/") in s:
+            return True
+        host = _re.sub(r"^[a-z]+://", "", u).split("/", 1)[0].split(":", 1)[0]
+        return self.host_in("malware_url", host) is not None

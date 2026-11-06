@@ -48,9 +48,10 @@ class Finding:
     stage: str = "url"
 
 
-def make(code: str, stage: str = "url", **fmt) -> Finding:
-    category, weight, message = RULES[code]
-    return Finding(code, category, weight, message.format(**fmt) if fmt else message, stage)
+def make(code: str, stage: str = "url", weight: int | None = None, **fmt) -> Finding:
+    category, w, message = RULES[code]
+    return Finding(code, category, w if weight is None else weight,
+                   message.format(**fmt) if fmt else message, stage)
 
 
 # --- URL rules -----------------------------------------------------------------------
@@ -81,9 +82,9 @@ def _brand_findings(p: ParsedURL) -> list[Finding]:
             if hit:
                 break
         if hit:
-            out.append(make(hit, brand=brand.capitalize()))
+            out.append(make(hit, brand=intel.brand_name(brand)))
         elif brand in sub_dc:
-            out.append(make("BRAND_IN_SUBDOMAIN", brand=brand, reg=p.registrable))
+            out.append(make("BRAND_IN_SUBDOMAIN", brand=intel.brand_name(brand), reg=p.registrable))
         if out:
             break   # one brand finding is enough; stacking them would double-count
     return out[:1]   # one brand finding is enough; stacking them would double-count

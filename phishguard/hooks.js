@@ -123,7 +123,11 @@
     wrapCtor(WebAssembly, "Module", () => once("wasm", { t: "wasm" }));
   }
   let evals = 0;
-  wrap(window, "eval", () => { if (++evals === 3) send({ t: "eval", n: evals }); });
+  wrap(window, "eval", (src) => {
+    // Playwright delivers binding replies through eval; those are ours, not the page's.
+    if (String(src).includes("__playwright")) return;
+    if (++evals === 3) send({ t: "eval", n: evals });
+  });
   let bigAtob = 0;
   wrap(window, "atob", (s) => { if (String(s).length > 500 && ++bigAtob === 1) send({ t: "atob", n: String(s).length }); });
 })();

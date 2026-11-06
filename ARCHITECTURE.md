@@ -27,7 +27,7 @@ PhishGuard covers four families of attack that arrive through a link. Each one g
 | Family | Real attacks | How PhishGuard detects or stops it |
 |---|---|---|
 | **1. Phishing** (fake pages) | Fake bank or Google login pages, lookalike domains, brand impersonation | URL rules, a password form that submits to another domain, the brand named in the title but not in the domain |
-| **2. Malware and harmful downloads** | Drive-by downloads, `.exe`/`.scr`/`.apk`/`.hta`/`.lnk`/`.iso` files, double extensions (`invoice.pdf.exe`), known-malware URLs | The sandbox **catches every download into a quarantine folder and never runs it**. It records the file name, type (from the file's magic bytes rather than its extension), size and SHA-256. The hash is checked against a local list of known-bad hashes, and the URL against a bundled snapshot of a public malware-URL list (e.g. abuse.ch URLhaus; licence checked before bundling). |
+| **2. Malware and harmful downloads** | Drive-by downloads, `.exe`/`.scr`/`.apk`/`.hta`/`.lnk`/`.iso` files, double extensions (`invoice.pdf.exe`), known-malware URLs | The sandbox **catches every download into a quarantine folder and never runs it**. It records the file name, type (from the file's magic bytes rather than its extension), size and SHA-256. The hash is checked against a local known-bad hash list, and every URL in the chain against a local malware-URL list. Both lists are filled by the admin from any feed they are licensed to use (`scripts/import_intel.py`). The free abuse.ch bulk downloads were checked during the build and now return "410 Gone" (they require an API key), so no third-party feed is bundled. |
 | **3. Device tracking and fingerprinting** | IP-logger links (Grabify-style), tracking pixels, third-party trackers, **browser fingerprinting** (canvas, WebGL, audio, fonts, battery, hardware info), WebRTC IP leaks, tracking parameters (`utm_*`, `fbclid`, `gclid`) | Before any page script runs, a script injected into the sandbox (`add_init_script`) **watches the fingerprinting APIs** and logs each technique the page uses. Requests are matched against an IP-logger list and a tracker list. The result is a **Privacy Report**: "14 trackers · 4 fingerprinting techniques · IP logger detected". *Open clean link* removes tracking parameters before handing the link to your real browser. |
 | **4. Scams and browser abuse** | **ClickFix / fake CAPTCHA** (the page copies a PowerShell command to your clipboard and tells you to press Win+R), fake "your PC is infected" or "update your browser" pages, notification-permission spam, launching dangerous Windows protocols (`ms-msdt:`, `search-ms:`, `ms-officecmd:`), crypto-mining scripts, heavily obfuscated JavaScript, open-redirect abuse (a trusted site bouncing you to an untrusted one) | Hooks on clipboard writes, permission requests and fullscreen calls. Every navigation to a non-http(s) scheme is **blocked and reported**. A list of known miner domains plus WebAssembly detection. An obfuscation check on scripts (eval/atob use, long base64 strings, entropy). A redirect-chain check for a trusted domain handing off to an untrusted one. |
 
@@ -181,8 +181,8 @@ Tracking rules (category `tracking`):
 | Rule | Weight |
 |---|---|
 | Known IP-logger domain in the chain | 60 |
-| Fingerprinting: each technique (canvas, WebGL, audio, fonts, battery, hardware) | 8 each, capped at 40 |
-| WebRTC peer connection created (can leak the local IP) | 15 |
+| Fingerprinting: each technique (canvas, WebGL, audio, fonts, battery, hardware) | 6 each, capped at 30 |
+| WebRTC peer connection created (can leak the local IP) | 10 |
 | More than 10 third-party trackers | 15 |
 | Tracking parameters in the URL | 5 |
 
