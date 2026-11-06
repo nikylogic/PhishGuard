@@ -1,0 +1,4 @@
+URL verdict benchmark
+URLs scored: 1000
+Average per URL: 0.297 ms
+Target: < 1 ms
