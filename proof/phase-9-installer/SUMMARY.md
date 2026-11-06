@@ -42,3 +42,19 @@ An earlier measurement showed about 640 ms. That was an error in the test: the s
 .venv\Scripts\pyinstaller --noconfirm --distpath build\dist --workpath build\work packaging\PhishGuard.spec
 ISCC.exe packaging\PhishGuard.iss
 ```
+
+## Opening speed (after the window and start-up changes)
+
+Measured on the packaged app with the timings PhishGuard now writes to `launcher.log`:
+
+| | Before | Now |
+|---|---|---|
+| Window appears | ~3.3 s (nothing shown until then) | **0.6 s**, showing "Starting PhishGuard…" |
+| Dashboard ready, engine not running | 3.8 s | **2.0 s** |
+| Dashboard ready, engine already running | 1.2 s | **1.1 s** |
+| First open after an install or update | 16 s | **4.8 s** |
+
+**What changed:**
+- **The window opens at once.** It shows a small "Starting PhishGuard…" screen and switches to the dashboard (or the Airlock) when the engine is ready. Before, nothing appeared until then.
+- **The AI Guard model loads in the background.** It takes about 1.5 s, and only link checks need it. The engine now answers in 0.46 s instead of about 1.9 s.
+- **Why the first open is slower:** Windows Defender scans new program files the first time they run, which is what made the first open after an install take 16 s. It happens once per install or update.

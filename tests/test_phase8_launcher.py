@@ -68,7 +68,7 @@ def run(inst, url, timeout=0.5):
     pglaunch.START_TIMEOUT = timeout
     try:
         code = pglaunch.main(["pg_open.pyw", url], env=inst.env, popen=popen, alert=alerts.append,
-                             window=lambda u, cfg: windows.append(u))
+                             window=lambda u, cfg: windows.append(u() if callable(u) else u))
     finally:
         pglaunch.START_TIMEOUT = old
     return SimpleNamespace(code=code, popen=popen.calls, alerts=alerts, windows=windows)
@@ -196,7 +196,7 @@ def test_another_phishguard_on_the_port_gets_a_clear_message(inst, tmp_path):
     try:
         r = run(inst, "http://unknown-site.example.top/")
         d = pglaunch.main(["pg_open.pyw", "--dashboard"], env=inst.env, popen=Recorder(), alert=r.alerts.append,
-                          window=lambda u, c: pytest.fail("no window"))
+                          window=lambda u, c: u())
     finally:
         srv.close()
     assert r.code == 1 and d == 1 and r.windows == []

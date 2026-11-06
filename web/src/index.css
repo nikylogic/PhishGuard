@@ -162,3 +162,19 @@
 ::view-transition-new(root) {
   animation: none;
 }
+
+/* The page area scrolls with the wheel, touchpad and keyboard, without a visible scrollbar. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Pages without the app shell (the Airlock window, welcome, log in) scroll the whole document. */
+html {
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar {
+  display: none;
+}

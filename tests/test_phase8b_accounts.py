@@ -254,7 +254,7 @@ def test_launcher_dashboard_fails_with_a_message(tmp_path):
     pglaunch.START_TIMEOUT = 0.3
     try:
         code = pglaunch.main(["pg_open.pyw", "--dashboard"], popen=Recorder(), alert=alerts.append,
-                             window=lambda u, c: pytest.fail("no window"),
+                             window=lambda u, c: u(),
                              env={"PHISHGUARD_INSTANCE": str(inst), "PHISHGUARD_PORT": str(free_port())})
     finally:
         pglaunch.START_TIMEOUT = old

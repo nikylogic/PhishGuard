@@ -18,7 +18,7 @@ from . import browser
 from . import privacy
 from . import db as dbmod
 from . import pagerules  # noqa: F401 - registers the page rules
-from .guard.guard import get_guard
+# The AI Guard is imported in _load_guard (background), not here.
 from .intel import Intel
 from .llm import Reviewer, apply_opinion, provider_from_settings
 from .pagerules import analyse
@@ -41,12 +41,38 @@ def get_lists(con) -> tuple[set[str], set[str]]:
 
 
 class ScanService:
+    def _load_guard(self):
+        try:
+            from .guard.guard import get_guard  # noqa: PLC0415 - imported here so start-up stays fast
+            self._guard = get_guard()
+        except Exception:  # noqa: BLE001 - checks still work without the AI Guard
+            log.exception("AI Guard did not load")
+        finally:
+            self._guard_ready.set()
+
+    @property
+    def guard(self):
+        self._guard_ready.wait(60)
+        return self._guard
+
+    @guard.setter
+    def guard(self, value):
+        self._guard = value
+        self._guard_ready.set()
+
     def __init__(self, db_path, instance_dir, worker=None, intel=None, guard=None, reviewer_factory=None):
         self.db_path = db_path
         self.instance = Path(instance_dir)
         self.worker = worker                  # ScanWorker, or a fake one in tests
         self.intel = intel or Intel.load(extra_rows=self._intel_rows())
-        self.guard = guard if guard is not None else get_guard()
+        # The AI Guard model (scikit-learn) takes about a second and a half to load. It is only needed
+        # once a page has been captured, so it loads in the background and the engine answers at once.
+        self._guard = guard
+        self._guard_ready = threading.Event()
+        if guard is not None:
+            self._guard_ready.set()
+        else:
+            threading.Thread(target=self._load_guard, name="pg-guard-load", daemon=True).start()
         self.reviewer_factory = reviewer_factory or (lambda settings: Reviewer(provider_from_settings(settings)))
         self.llm_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="pg-llm")
         self.lock = threading.Lock()

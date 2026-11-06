@@ -58,7 +58,7 @@ function Shell() {
       <SidebarInset className="min-h-0 overflow-hidden">
         <SiteHeader title={TITLES[route.page] ?? boot.title ?? "PhishGuard"} />
         {/* Only the page scrolls; the header (and the window buttons in it) stays put. */}
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+        <div className="no-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="page-view flex flex-col gap-4 py-4 md:gap-6 md:py-6">
               <Page route={route} />

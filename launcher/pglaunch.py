@@ -33,6 +33,7 @@ HOST = "127.0.0.1"
 NOT_A_BROWSER = {"python.exe", "pythonw.exe", "py.exe", "pyw.exe"}
 CHROMIUM = ("chrome", "msedge", "brave")
 START_TIMEOUT = 30.0       # first start loads the AI Guard model and the sandbox browser
+STARTED = time.monotonic()  # for the timings written to launcher.log
 
 TITLE = "PhishGuard"
 ICON_WARNING, TOPMOST = 0x30, 0x40000
@@ -300,24 +301,59 @@ class WindowControls:
         self._window.resize(w, h, fix)
 
 
-def open_window(check_url: str, cfg: dict, popen=subprocess.Popen) -> None:
-    """Show the Airlock in its own small app window. If that is not possible, show the Airlock
-    page (a local PhishGuard page, never the unchecked link) in the real browser."""
+SPLASH = """<!doctype html><html><head><meta charset="utf-8"><style>
+html,body{margin:0;height:100%;background:BG;color:FG;font:15px "Segoe UI",system-ui,sans-serif}
+body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.spin{width:22px;height:22px;border:2px solid MUTED;border-top-color:FG;border-radius:50%;animation:r .8s linear infinite}
+@keyframes r{to{transform:rotate(360deg)}}
+.drag{position:fixed;left:0;right:0;top:0;height:40px}
+</style></head><body><div class="drag pywebview-drag-region"></div><div class="spin"></div><div>Starting PhishGuard…</div></body></html>"""
+
+
+def splash(light: bool) -> str:
+    bg, fg, muted = ("#ffffff", "#171717", "#e5e5e5") if light else ("#0a0a0a", "#fafafa", "#333333")
+    return SPLASH.replace("MUTED", muted).replace("BG", bg).replace("FG", fg)
+
+
+def open_window(target, cfg: dict, popen=subprocess.Popen) -> None:
+    """Show PhishGuard in its own app window. `target` is an address, or a function that gets one
+    (starting the engine if needed); then a "Starting PhishGuard…" screen shows at once instead of
+    nothing. If no window is possible, the page (a local PhishGuard page, never the unchecked link)
+    opens in the real browser instead."""
+    prepare = target if callable(target) else (lambda: target)
+    problem: list[Exception] = []
     try:
         import webview
+        light = light_theme()
         controls = WindowControls()
-        window = webview.create_window("PhishGuard", check_url, width=1220, height=880, min_size=(MIN_W, MIN_H),
-                                       frameless=True, easy_drag=False, js_api=controls, text_select=True,
-                                       background_color="#ffffff" if light_theme() else "#0a0a0a")
+        first = None if callable(target) else target
+        window = webview.create_window("PhishGuard", url=first, html=None if first else splash(light),
+                                       width=1220, height=880, min_size=(MIN_W, MIN_H), frameless=True,
+                                       easy_drag=False, js_api=controls, text_select=True,
+                                       background_color="#ffffff" if light else "#0a0a0a")
         controls.attach(window)
-        webview.start()
-        return
+        # Timings in launcher.log, so a slow start can be explained ("window 0.6 s, page 1.2 s").
+        window.events.shown += lambda *a: log(cfg, f"window shown at {time.monotonic() - STARTED:.1f} s")
+        window.events.loaded += lambda *a: log(cfg, f"page loaded at {time.monotonic() - STARTED:.1f} s")
+
+        def load():
+            if first:
+                return
+            try:
+                window.load_url(prepare())
+            except Exception as e:  # noqa: BLE001 - reported after the window closes
+                problem.append(e)
+                window.destroy()
+        webview.start(load)
     except Exception as e:  # noqa: BLE001 - any window problem falls back to the browser
         log(cfg, f"window failed ({type(e).__name__}); using the browser")
-    exe = real_browser(cfg)
-    if not exe:
-        raise Failed("No window or browser was available to show the check.")
-    open_in_browser(exe, check_url, popen)
+        exe = real_browser(cfg)
+        if not exe:
+            raise Failed("No window or browser was available to show the check.") from None
+        open_in_browser(exe, prepare(), popen)
+        return
+    if problem:
+        raise problem[0]
 
 
 def emit(text: str, out, cfg: dict) -> None:
@@ -338,13 +374,15 @@ def main(argv: list[str], env=os.environ, popen=subprocess.Popen, alert=message_
     cfg = config(env)
     raw = args[0] if args else ""
     if "--dashboard" in argv[1:]:
-        try:
+        def dashboard() -> str:
             ensure_server(cfg, popen=popen, env=env)
-            target = dashboard_url(cfg)
+            log(cfg, f"dashboard: engine ready at {time.monotonic() - STARTED:.1f} s")
+            return dashboard_url(cfg)
+        try:
             if no_window:
-                emit(target, out, cfg)
+                emit(dashboard(), out, cfg)
             else:
-                window(target, cfg)
+                window(dashboard, cfg)          # the window opens at once and shows "Starting PhishGuard…"
             return 0
         except Exception as e:  # noqa: BLE001
             log(cfg, f"dashboard failed: {type(e).__name__}: {e}")
@@ -359,14 +397,15 @@ def main(argv: list[str], env=os.environ, popen=subprocess.Popen, alert=message_
             open_in_browser(exe, url, popen)
             log(cfg, f"trusted, opened directly: {host}")
             return 0
-        ensure_server(cfg, popen=popen, env=env)
-        scan = submit(url, cfg)
-        check_url = f"{cfg['base']}/check/{int(scan['id'])}?t={scan['ticket']}"
-        log(cfg, f"check #{scan['id']}: {host}")
+        def airlock() -> str:
+            ensure_server(cfg, popen=popen, env=env)
+            scan = submit(url, cfg)
+            log(cfg, f"check #{scan['id']}: {host}")
+            return f"{cfg['base']}/check/{int(scan['id'])}?t={scan['ticket']}"
         if no_window:
-            emit(check_url, out, cfg)
+            emit(airlock(), out, cfg)
         else:
-            window(check_url, cfg)
+            window(airlock, cfg)                # the window opens at once; the check fills it when ready
         return 0
     except Refused as e:
         log(cfg, f"refused: {raw[:80]!r}")
