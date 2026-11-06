@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar"
-import { api, go, type User } from "@/lib/api"
+import { api, boot, go, type User } from "@/lib/api"
 
 const ROLE = { admin: "Administrator", analyst: "Analyst" }
 
@@ -30,6 +30,8 @@ function Who({ user }: { user: User }) {
 
 export function NavUser({ user }: { user: User }) {
   const { isMobile } = useSidebar()
+  // Personal mode has no passwords, so there is nothing to log out of.
+  if (boot.mode === "personal") return null
   const logout = async () => {
     try {
       await api("/api/logout", { method: "POST" })

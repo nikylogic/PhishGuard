@@ -5,6 +5,7 @@ the instance folder (database, secrets, screenshots, quarantine), so tests can
 point it at a temporary folder.
 """
 import secrets
+from datetime import timedelta
 from pathlib import Path
 
 from flask import Flask, g, jsonify, request
@@ -53,6 +54,10 @@ def create_app(overrides: dict | None = None) -> Flask:
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Strict",
         MAX_CONTENT_LENGTH=256 * 1024,
+        PERMANENT_SESSION_LIFETIME=timedelta(days=30),   # personal mode stays signed in
+        REGISTRY_BASE="Software",        # tests point these three at throwaway places
+        SHORTCUT_PATH=None,
+        OPEN_SETTINGS=None,
     )
     app.config.update(overrides)
 

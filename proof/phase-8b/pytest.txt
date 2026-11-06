@@ -1,0 +1,30 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.2.0, pluggy-1.7.0 -- D:\PhishGuard\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\PhishGuard
+plugins: anyio-4.16.0
+collecting ... collected 20 items
+
+tests/test_phase8b_accounts.py::test_first_run_offers_just_me_or_several_people PASSED [  5%]
+tests/test_phase8b_accounts.py::test_just_me_needs_no_password_and_signs_you_in PASSED [ 10%]
+tests/test_phase8b_accounts.py::test_setup_cannot_run_twice PASSED       [ 15%]
+tests/test_phase8b_accounts.py::test_the_owner_account_has_no_usable_password PASSED [ 20%]
+tests/test_phase8b_accounts.py::test_personal_mode_session_survives_closing_the_window PASSED [ 25%]
+tests/test_phase8b_accounts.py::test_a_stranger_in_personal_mode_gets_no_dashboard PASSED [ 30%]
+tests/test_phase8b_accounts.py::test_only_the_launcher_can_get_an_entry_code PASSED [ 35%]
+tests/test_phase8b_accounts.py::test_an_entry_code_works_once PASSED     [ 40%]
+tests/test_phase8b_accounts.py::test_an_entry_code_expires PASSED        [ 45%]
+tests/test_phase8b_accounts.py::test_accounts_mode_gives_the_launcher_no_code PASSED [ 50%]
+tests/test_phase8b_accounts.py::test_switch_personal_to_accounts_and_back PASSED [ 55%]
+tests/test_phase8b_accounts.py::test_switching_to_personal_locks_out_other_accounts PASSED [ 60%]
+tests/test_phase8b_accounts.py::test_analysts_cannot_switch_modes PASSED [ 65%]
+tests/test_phase8b_accounts.py::test_old_databases_with_users_count_as_accounts PASSED [ 70%]
+tests/test_phase8b_accounts.py::test_launcher_dashboard_opens_the_entry_page PASSED [ 75%]
+tests/test_phase8b_accounts.py::test_launcher_dashboard_fails_with_a_message PASSED [ 80%]
+tests/test_phase8b_accounts.py::test_default_browser_button_registers_and_opens_windows_settings PASSED [ 85%]
+tests/test_phase8b_accounts.py::test_windows_reports_when_phishguard_is_the_default PASSED [ 90%]
+tests/test_phase8b_accounts.py::test_remove_undoes_everything_and_opens_the_default_apps_list PASSED [ 95%]
+tests/test_phase8b_accounts.py::test_only_admins_can_touch_windows PASSED [100%]
+
+--------- generated xml file: D:\PhishGuard\proof\phase-8b\junit.xml ----------
+============================= 20 passed in 13.20s =============================

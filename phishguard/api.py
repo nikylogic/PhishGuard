@@ -6,8 +6,8 @@ from flask import Blueprint, current_app, g, jsonify, request, send_from_directo
 from werkzeug.exceptions import NotFound
 
 from . import browser
-from .auth import (ROLES, attempt_login, audit, create_user, csrf_token, current_user, login_required,
-                   password_ok)
+from .auth import (ROLES, attempt_login, audit, auth_mode, create_user, csrf_token, current_user, entry_codes,
+                   hash_password, login_required, owner_id, password_ok, set_setting, start_session)
 from .db import get_db
 from .services import get_settings, scan_row
 from .urltools import UnsafeURL, clean_url, registrable_domain
@@ -36,6 +36,8 @@ def csrf():
 
 @auth_bp.post("/api/login")
 def login_api():
+    if auth_mode() == "personal":
+        return err("PhishGuard is in personal mode: there are no passwords.", 409)
     data = request.get_json(silent=True) or request.form
     user, error, code = attempt_login(str(data.get("username", ""))[:80], str(data.get("password", ""))[:200])
     if error:
@@ -55,7 +57,56 @@ def logout_api():
 @bp.get("/me")
 @login_required()
 def me():
-    return jsonify(user=current_user(), csrf=csrf_token())
+    return jsonify(user=current_user(), csrf=csrf_token(), mode=auth_mode())
+
+
+@bp.post("/entry")
+def entry_code():
+    """Only the launcher (with the secret token) may ask. In personal mode it gets a one-time code
+    that opens the dashboard; in accounts mode there is none and the window shows the login page."""
+    if not g.get("via_launcher"):
+        return err("Only the PhishGuard launcher can do this.", 403)
+    if auth_mode() != "personal":
+        return jsonify(code=None, mode=auth_mode())
+    return jsonify(code=entry_codes.issue(), mode="personal")
+
+
+@bp.post("/account-mode")
+@login_required("admin")
+def account_mode():
+    """Switch between personal mode and accounts. Admins only."""
+    from .views import account_problem
+    data = request.get_json(silent=True) or {}
+    con = get_db()
+    now, want, me_ = auth_mode(con), data.get("mode"), current_user()
+    if want == now:
+        return jsonify(ok=True, mode=now)
+    if want == "accounts":
+        # Turn the owner account into a real admin account with a name and password.
+        name, pw, problem = account_problem(data)
+        if problem:
+            return err(problem)
+        if con.execute("SELECT 1 FROM users WHERE lower(username) = lower(?) AND id != ?", (name, me_["id"])).fetchone():
+            return err("That username is taken.", 409)
+        con.execute("UPDATE users SET username = ?, pw_hash = ?, role = 'admin' WHERE id = ?",
+                    (name, hash_password(pw), me_["id"]))
+        set_setting(con, "auth_mode", "accounts")
+        con.commit()
+        audit("account_mode", "accounts on")
+        start_session(me_["id"])
+        return jsonify(ok=True, mode="accounts", csrf=session["csrf"])
+    if want == "personal":
+        from werkzeug.security import check_password_hash
+        row = con.execute("SELECT pw_hash FROM users WHERE id = ?", (me_["id"],)).fetchone()
+        if not check_password_hash(row["pw_hash"], str(data.get("password", ""))):
+            return err("That is not your password.", 403)
+        set_setting(con, "auth_mode", "personal")
+        set_setting(con, "owner_id", str(me_["id"]))
+        con.commit()
+        audit("account_mode", "personal mode on")
+        start_session(me_["id"], permanent=True)
+        return jsonify(ok=True, mode="personal", csrf=session["csrf"])
+    return err("Choose personal or accounts.")
 
 
 # --- scans ------------------------------------------------------------------------------------------
@@ -292,6 +343,37 @@ def read_settings():
     s["llm_api_key"] = ("•" * 8 + key[-4:]) if key else ""
     s["browsers"] = browser.detect()
     return jsonify(s)
+
+
+@bp.get("/windows")
+@login_required("admin")
+def windows_status():
+    from . import windows
+    return jsonify(windows.status())
+
+
+@bp.post("/windows/default")
+@login_required("admin")
+def windows_default():
+    from . import windows
+    try:
+        out = windows.make_default()
+    except Exception as e:  # noqa: BLE001
+        return err(f"Could not register PhishGuard with Windows: {e}", 500)
+    audit("windows_default", "registered; opened Windows Settings")
+    return jsonify(out)
+
+
+@bp.post("/windows/remove")
+@login_required("admin")
+def windows_remove():
+    from . import windows
+    try:
+        out = windows.remove()
+    except Exception as e:  # noqa: BLE001
+        return err(f"Could not remove PhishGuard from Windows: {e}", 500)
+    audit("windows_remove", "unregistered; opened Windows Settings")
+    return jsonify(out)
 
 
 @bp.post("/settings")

@@ -1,4 +1,4 @@
-import { SearchXIcon, ShieldXIcon } from "lucide-react"
+import { LockIcon, SearchXIcon, ShieldXIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
@@ -8,7 +8,9 @@ import { boot } from "@/lib/api"
 export function Message() {
   const title = boot.title || "Nothing here"
   const text = boot.text || "This page does not exist."
-  const Icon = title === "Not allowed" ? ShieldXIcon : SearchXIcon
+  // Personal mode, opened without the Start menu shortcut: "Go home" would only lead back here.
+  const lockedOut = boot.mode === "personal" && !boot.user
+  const Icon = lockedOut ? LockIcon : title === "Not allowed" ? ShieldXIcon : SearchXIcon
   return (
     <div className="px-4 lg:px-6">
       <Empty className="min-h-[60svh] border border-dashed">
@@ -21,11 +23,13 @@ export function Message() {
           </EmptyTitle>
           <EmptyDescription>{text}</EmptyDescription>
         </EmptyHeader>
-        <EmptyContent>
-          <Button asChild>
-            <a href="/">Go home</a>
-          </Button>
-        </EmptyContent>
+        {!lockedOut && (
+          <EmptyContent>
+            <Button asChild>
+              <a href="/">Go home</a>
+            </Button>
+          </EmptyContent>
+        )}
       </Empty>
     </div>
   )

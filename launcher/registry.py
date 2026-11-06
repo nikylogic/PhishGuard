@@ -8,6 +8,8 @@ throwaway base), and unregister() removes exactly what register() wrote.
 """
 from __future__ import annotations
 
+import os
+import subprocess
 import sys
 import winreg
 from pathlib import Path
@@ -134,3 +136,57 @@ def dump(base: str = "Software") -> list[str]:
     except FileNotFoundError:
         pass
     return out
+
+
+# --- is PhishGuard the default? -------------------------------------------------------------
+
+def _read(path: str, name: str) -> str | None:
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, path) as k:
+            return str(winreg.QueryValueEx(k, name)[0])
+    except OSError:
+        return None
+
+
+def is_registered(base: str = "Software") -> bool:
+    return _read(keys(base)["registered"], APP) is not None
+
+
+def is_default(base: str = "Software") -> bool:
+    """True when Windows hands both http and https links to PhishGuard. Windows keeps the user's
+    choice under UserChoice; only the Settings app can write it, so we only ever read it."""
+    root = rf"{base}\Microsoft\Windows\Shell\Associations\UrlAssociations"
+    return all(_read(rf"{root}\{s}\UserChoice", "ProgId") == PROGID for s in ("http", "https"))
+
+
+SETTINGS_PAGE = f"ms-settings:defaultapps?registeredAppUser={APP}"   # opens PhishGuard's own page
+SETTINGS_LIST = "ms-settings:defaultapps"
+
+
+# --- the Start menu shortcut (opens the dashboard) -------------------------------------------
+
+def shortcut_path() -> Path:
+    return Path(os.environ["APPDATA"]) / "Microsoft" / "Windows" / "Start Menu" / "Programs" / f"{APP}.lnk"
+
+
+def make_shortcut(path: Path | None = None, pythonw: str | None = None, script: Path = LAUNCHER) -> Path:
+    path = path or shortcut_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    # Values go in through environment variables, so no path is ever pasted into the script text.
+    env = dict(os.environ, PG_LNK=str(path), PG_EXE=pythonw or default_pythonw(), PG_ARGS=f'"{script}" --dashboard',
+               PG_DIR=str(ROOT))
+    ps = ("$s = (New-Object -ComObject WScript.Shell).CreateShortcut($env:PG_LNK); "
+          "$s.TargetPath = $env:PG_EXE; $s.Arguments = $env:PG_ARGS; $s.WorkingDirectory = $env:PG_DIR; "
+          "$s.Description = 'Open the PhishGuard dashboard'; $s.Save()")
+    subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", ps], env=env, check=True,
+                   capture_output=True, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    return path
+
+
+def remove_shortcut(path: Path | None = None) -> bool:
+    path = path or shortcut_path()
+    try:
+        path.unlink()
+        return True
+    except FileNotFoundError:
+        return False

@@ -8,7 +8,8 @@ from pathlib import Path
 
 from flask import Blueprint, abort, current_app, g, jsonify, redirect, render_template, request, session, url_for
 
-from .auth import attempt_login, create_user, csrf_token, current_user, login_required, password_ok
+from .auth import (attempt_login, audit, auth_mode, create_user, csrf_token, current_user, entry_codes, hash_password,
+                   login_required, owner_id, password_ok, set_setting, start_session)
 from .db import get_db
 
 bp = Blueprint("views", __name__)
@@ -39,48 +40,87 @@ def page(name: str, tab_title: str, status: int = 200, **data):
         "nonce": g.csp_nonce,
         "csrf": csrf_token(),
         "user": json.dumps({"id": user["id"], "username": user["username"], "role": user["role"]}) if user else "",
+        "mode": auth_mode(),
         **{k: str(v) for k, v in data.items()},
     }
     return render_template("app.html", title=tab_title, boot=boot, assets=bundle()), status
 
 
-def _no_users() -> bool:
-    return get_db().execute("SELECT COUNT(*) FROM users").fetchone()[0] == 0
+def account_problem(data) -> tuple[str, str, str | None]:
+    """Check a new admin username and password. Returns (name, password, problem)."""
+    name = str(data.get("username", "")).strip()[:40]
+    pw = str(data.get("password", ""))[:200]
+    if not name or not name.replace("_", "").replace(".", "").isalnum():
+        return name, pw, "Usernames can use letters, numbers, dots and underscores."
+    problem = password_ok(pw)
+    if problem:
+        return name, pw, problem
+    if pw != str(data.get("password2", "")):
+        return name, pw, "The two passwords do not match."
+    return name, pw, None
+
+
+def make_owner(con) -> int:
+    """The built-in account personal mode uses. Its password is random and never shown,
+    so nobody can log in with it; the way in is the launcher's one-time code."""
+    import secrets as _s
+    cur = con.execute("INSERT INTO users(username, pw_hash, role) VALUES (?, ?, 'admin')",
+                      ("you", hash_password(_s.token_urlsafe(32))))
+    return cur.lastrowid
 
 
 @bp.get("/setup")
 def setup():
-    """First run only: create the first admin account."""
-    if not _no_users():
+    """First run only: choose personal mode (no passwords) or accounts."""
+    if auth_mode() != "unset":
         return redirect(url_for("views.login"))
     return page("setup", "Welcome")
 
 
 @bp.post("/api/setup")
 def setup_api():
-    if not _no_users():
+    con = get_db()
+    if auth_mode(con) != "unset":
         return jsonify(error="PhishGuard is already set up."), 409
     data = request.get_json(silent=True) or {}
-    name = str(data.get("username", "")).strip()[:40]
-    pw = str(data.get("password", ""))[:200]
-    problem = password_ok(pw)
-    if not name or not name.replace("_", "").replace(".", "").isalnum():
-        return jsonify(error="Usernames can use letters, numbers, dots and underscores."), 400
+    if data.get("mode", "accounts") == "personal":
+        uid = make_owner(con)
+        set_setting(con, "auth_mode", "personal")
+        set_setting(con, "owner_id", str(uid))
+        con.commit()
+        start_session(uid, permanent=True)
+        audit("setup", "personal mode")
+        return jsonify(user=current_user(), csrf=session["csrf"], mode="personal")
+    name, pw, problem = account_problem(data)
     if problem:
         return jsonify(error=problem), 400
-    if pw != str(data.get("password2", "")):
-        return jsonify(error="The two passwords do not match."), 400
-    create_user(get_db(), name, pw, "admin")
+    create_user(con, name, pw, "admin")
+    set_setting(con, "auth_mode", "accounts")
+    con.commit()
     user, _, _ = attempt_login(name, pw)
-    return jsonify(user=user, csrf=session.get("csrf"))
+    return jsonify(user=user, csrf=session.get("csrf"), mode="accounts")
+
+
+@bp.get("/enter/<code>")
+def enter(code):
+    """Personal mode: the launcher's Start-menu shortcut opens the dashboard through here."""
+    if auth_mode() == "personal" and entry_codes.redeem(code) and owner_id():
+        start_session(owner_id(), permanent=True)
+        return redirect(url_for("views.home"))
+    return redirect(url_for("views.login"))
 
 
 @bp.get("/login")
 def login():
-    if _no_users():
+    mode = auth_mode()
+    if mode == "unset":
         return redirect(url_for("views.setup"))
     if current_user():
         return redirect(url_for("views.home"))
+    if mode == "personal":
+        return page("message", "Open PhishGuard", 401, title="Open PhishGuard from the Start menu",
+                    text="PhishGuard is in personal mode, so there is no password. Open it with the PhishGuard "
+                         "shortcut in the Start menu.")
     nxt = request.args.get("next", "/")
     return page("login", "Log in", next=nxt if nxt.startswith("/") and not nxt.startswith("//") else "/")
 

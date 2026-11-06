@@ -2,6 +2,7 @@
 
     pythonw pg_open.pyw "<url>"            (registered as the http/https handler)
     python  pg_open.pyw --no-window <url>  (prints the Airlock address instead of opening it; used by tests)
+    pythonw pg_open.pyw --dashboard        (the Start menu shortcut: opens the dashboard)
 
 1. Only http and https links are accepted. Anything else (javascript:, file:, ms-msdt: ...) is refused.
 2. Trusted (allowlisted) sites open straight away in the real browser. This reads two small
@@ -154,12 +155,13 @@ def ensure_server(cfg: dict, popen=subprocess.Popen, env=os.environ, timeout: fl
     raise Failed("The PhishGuard engine did not start.")
 
 
-def submit(url: str, cfg: dict) -> dict:
+def post(path: str, body: dict, cfg: dict) -> dict:
+    """POST to the engine with the launcher's secret token."""
     try:
         token = (cfg["instance"] / "launcher.token").read_text(encoding="utf-8").strip()
     except OSError:
         raise Failed("The launcher key is missing.") from None
-    req = urllib.request.Request(cfg["base"] + "/api/scan", data=json.dumps({"url": url}).encode(), method="POST",
+    req = urllib.request.Request(cfg["base"] + path, data=json.dumps(body).encode(), method="POST",
                                  headers={"Content-Type": "application/json", "X-PhishGuard-Token": token})
     try:
         with urllib.request.urlopen(req, timeout=10) as r:
@@ -174,6 +176,18 @@ def submit(url: str, cfg: dict) -> dict:
         raise Failed(msg or f"The engine answered {e.code}.") from None
     except (OSError, ValueError):
         raise Failed("The PhishGuard engine did not answer.") from None
+
+
+def submit(url: str, cfg: dict) -> dict:
+    return post("/api/scan", {"url": url}, cfg)
+
+
+def dashboard_url(cfg: dict) -> str:
+    """Personal mode: a one-time code signs the window in. Accounts mode: the login page."""
+    code = post("/api/entry", {}, cfg).get("code")
+    if code and not str(code).replace("-", "").replace("_", "").isalnum():
+        raise Failed("The engine sent an odd entry code.")
+    return f"{cfg['base']}/enter/{code}" if code else f"{cfg['base']}/login"
 
 
 # --- what the user sees ----------------------------------------------------------------------
@@ -206,10 +220,24 @@ def open_window(check_url: str, cfg: dict, popen=subprocess.Popen) -> None:
 
 def main(argv: list[str], env=os.environ, popen=subprocess.Popen, alert=message_box, window=open_window,
          out=sys.stdout) -> int:
-    args = [a for a in argv[1:] if a != "--no-window"]
+    flags = {"--no-window", "--dashboard"}
+    args = [a for a in argv[1:] if a not in flags]
     no_window = "--no-window" in argv[1:]
     cfg = config(env)
     raw = args[0] if args else ""
+    if "--dashboard" in argv[1:]:
+        try:
+            ensure_server(cfg, popen=popen, env=env)
+            target = dashboard_url(cfg)
+            if no_window:
+                print(target, file=out)
+            else:
+                window(target, cfg)
+            return 0
+        except Exception as e:  # noqa: BLE001
+            log(cfg, f"dashboard failed: {type(e).__name__}: {e}")
+            alert(f"PhishGuard could not open its dashboard.\n\n({e})")
+            return 1
     try:
         url, host = check_link(raw)
         if allowlisted(host, cfg):

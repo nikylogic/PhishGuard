@@ -16,6 +16,8 @@ export const boot = {
   nonce: root.dataset.nonce ?? "",
   title: root.dataset.title ?? "",
   text: root.dataset.text ?? "",
+  // "personal": one person, no passwords. "accounts": usernames, passwords and roles.
+  mode: (root.dataset.mode ?? "accounts") as "personal" | "accounts" | "unset",
 }
 
 let csrf = root.dataset.csrf ?? ""

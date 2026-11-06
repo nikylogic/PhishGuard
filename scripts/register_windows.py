@@ -2,7 +2,9 @@
 
     python scripts/register_windows.py
 
-Then open Settings > Apps > Default apps > PhishGuard and set it for HTTP and HTTPS.
+It also adds a "PhishGuard" Start menu shortcut that opens the dashboard. Then open
+Settings > Apps > Default apps > PhishGuard and press "Set default". (The "Make PhishGuard my
+default browser" button in PhishGuard's own Settings does all of this for you.)
 Undo with: python scripts/unregister_windows.py
 """
 import sys
@@ -15,5 +17,6 @@ import registry  # noqa: E402
 if __name__ == "__main__":
     registry.register()
     print("\n".join(registry.dump()))
+    print(f"\nStart menu shortcut: {registry.make_shortcut()}")
     print("\nPhishGuard is registered. Now open Settings > Apps > Default apps > PhishGuard\n"
-          "and choose it for HTTP and HTTPS.")
+          "and press \"Set default\".")

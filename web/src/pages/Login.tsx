@@ -108,15 +108,46 @@ export function Login() {
 }
 
 export function Setup() {
+  const [accounts, setAccounts] = React.useState(false)
+  const personal = useSubmit(async () => {
+    await api("/api/setup", { method: "POST", body: { mode: "personal" } })
+    go("/")
+  })
+  if (accounts) return <AccountsSetup back={() => setAccounts(false)} />
+  return (
+    <Frame title="Welcome" text="Who uses PhishGuard on this PC?">
+      <form onSubmit={personal.submit}>
+        <FieldGroup>
+          <Problem error={personal.error} />
+          <Field>
+            <Button type="submit" disabled={personal.busy}>
+              {personal.busy && <Spinner />}
+              Just me
+            </Button>
+            <FieldDescription>No password. Open PhishGuard from the Start menu.</FieldDescription>
+          </Field>
+          <Field>
+            <Button type="button" variant="outline" onClick={() => setAccounts(true)}>
+              Several people
+            </Button>
+            <FieldDescription>Each person logs in with a username and password. You can switch later in Settings.</FieldDescription>
+          </Field>
+        </FieldGroup>
+      </form>
+    </Frame>
+  )
+}
+
+function AccountsSetup({ back }: { back: () => void }) {
   const [username, setUsername] = React.useState("admin")
   const [password, setPassword] = React.useState("")
   const [password2, setPassword2] = React.useState("")
   const { error, busy, submit } = useSubmit(async () => {
-    await api("/api/setup", { method: "POST", body: { username, password, password2 } })
+    await api("/api/setup", { method: "POST", body: { mode: "accounts", username, password, password2 } })
     go("/")
   })
   return (
-    <Frame title="Welcome" text="Create the first admin account. You can add more people later in Settings.">
+    <Frame title="Create the admin account" text="You can add more people later in Settings.">
       <form onSubmit={submit}>
         <FieldGroup>
           <Problem error={error} />
@@ -137,6 +168,9 @@ export function Setup() {
             <Button type="submit" disabled={busy}>
               {busy && <Spinner />}
               Create admin account
+            </Button>
+            <Button type="button" variant="ghost" onClick={back}>
+              Back
             </Button>
           </Field>
         </FieldGroup>

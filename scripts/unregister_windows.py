@@ -13,4 +13,6 @@ import registry  # noqa: E402
 
 if __name__ == "__main__":
     removed = registry.unregister()
+    if registry.remove_shortcut():
+        removed.append(str(registry.shortcut_path()))
     print("\n".join(f"removed {r}" for r in removed) or "Nothing to remove.")

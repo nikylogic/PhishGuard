@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ago, api, errText } from "@/lib/api"
+import { ago, api, boot, errText, go } from "@/lib/api"
 
 type SettingsData = { browsers: { name: string; path: string }[]; browser_path: string; llm_provider: string; llm_model: string; llm_api_key: string }
 type UserRow = { id: number; username: string; role: string; last_login: string | null }
@@ -28,7 +28,7 @@ export function Settings() {
     <Tabs defaultValue="general" className="gap-4 px-4 lg:px-6">
       <TabsList>
         <TabsTrigger value="general">General</TabsTrigger>
-        <TabsTrigger value="users">Users</TabsTrigger>
+        {boot.mode !== "personal" && <TabsTrigger value="users">Users</TabsTrigger>}
         <TabsTrigger value="audit">Audit log</TabsTrigger>
       </TabsList>
       <TabsContent value="general">
@@ -41,6 +41,151 @@ export function Settings() {
         <Audit />
       </TabsContent>
     </Tabs>
+  )
+}
+
+type WinStatus = { supported: boolean; registered: boolean; default: boolean; shortcut: boolean }
+
+// Windows only lets the Settings app change the default browser, so this registers PhishGuard and
+// opens Settings on PhishGuard's own page. The user presses "Set default" there.
+function DefaultBrowser() {
+  const [st, setSt] = React.useState<WinStatus | null>(null)
+  const [busy, setBusy] = React.useState(false)
+  const load = React.useCallback(() => api<WinStatus>("/api/windows").then(setSt).catch(() => null), [])
+  React.useEffect(() => {
+    load()
+  }, [load])
+  // While Windows Settings is open, check every two seconds for a minute.
+  const watch = () => {
+    let n = 0
+    const t = window.setInterval(async () => {
+      n += 1
+      const s = await api<WinStatus>("/api/windows").catch(() => null)
+      if (s) setSt(s)
+      if (s?.default || n >= 30) window.clearInterval(t)
+    }, 2000)
+  }
+  const run = async (path: string, note: string) => {
+    setBusy(true)
+    try {
+      setSt(await api<WinStatus>(path, { method: "POST" }))
+      toast.success(note)
+      watch()
+    } catch (e) {
+      toast.error(errText(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+  if (!st?.supported) return null
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Default browser</CardTitle>
+        <CardDescription>
+          {st.default
+            ? "PhishGuard is your default browser. Links you click anywhere in Windows are checked first."
+            : "Make PhishGuard your default browser so links you click anywhere in Windows are checked first."}
+        </CardDescription>
+      </CardHeader>
+      {!st.default && (
+        <CardContent className="text-sm text-muted-foreground">
+          Windows will open its Settings on PhishGuard's page. Press <span className="font-medium text-foreground">Set default</span> there.
+        </CardContent>
+      )}
+      <CardFooter className="gap-2">
+        {st.default ? (
+          <Button variant="outline" disabled={busy} onClick={() => run("/api/windows/remove", "Removed. Choose your old browser in Windows Settings.")}>
+            Stop using PhishGuard for links
+          </Button>
+        ) : (
+          <Button disabled={busy} onClick={() => run("/api/windows/default", "Windows Settings is open. Press Set default.")}>
+            Make PhishGuard my default browser
+          </Button>
+        )}
+      </CardFooter>
+    </Card>
+  )
+}
+
+// Personal mode (just me, no password) or accounts (usernames, passwords, roles).
+function AccountMode() {
+  const personal = boot.mode === "personal"
+  const [open, setOpen] = React.useState(false)
+  const [username, setUsername] = React.useState("admin")
+  const [password, setPassword] = React.useState("")
+  const [password2, setPassword2] = React.useState("")
+  const [busy, setBusy] = React.useState(false)
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setBusy(true)
+    try {
+      const body = personal ? { mode: "accounts", username, password, password2 } : { mode: "personal", password }
+      await api("/api/account-mode", { method: "POST", body })
+      go("/settings")
+    } catch (err) {
+      toast.error(errText(err))
+      setBusy(false)
+    }
+  }
+  return (
+    <Card>
+      <form onSubmit={submit} className="contents">
+        <CardHeader>
+          <CardTitle>Who uses PhishGuard</CardTitle>
+          <CardDescription>
+            {personal
+              ? "Just you. There is no password: PhishGuard opens from the Start menu."
+              : "Several people. Each one logs in with a username and password."}
+          </CardDescription>
+        </CardHeader>
+        {open && (
+          <CardContent>
+            <FieldGroup>
+              {personal ? (
+                <>
+                  <Field>
+                    <FieldLabel htmlFor="mode-user">Your username</FieldLabel>
+                    <Input id="mode-user" autoComplete="username" required value={username} onChange={(e) => setUsername(e.target.value)} />
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="mode-pw">New password</FieldLabel>
+                    <Input id="mode-pw" type="password" autoComplete="new-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                    <FieldDescription>At least 8 characters</FieldDescription>
+                  </Field>
+                  <Field>
+                    <FieldLabel htmlFor="mode-pw2">Password again</FieldLabel>
+                    <Input id="mode-pw2" type="password" autoComplete="new-password" required value={password2} onChange={(e) => setPassword2(e.target.value)} />
+                  </Field>
+                </>
+              ) : (
+                <Field>
+                  <FieldLabel htmlFor="mode-pw">Your password</FieldLabel>
+                  <Input id="mode-pw" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                  <FieldDescription>Other accounts are kept but cannot log in until you switch back.</FieldDescription>
+                </Field>
+              )}
+            </FieldGroup>
+          </CardContent>
+        )}
+        <CardFooter className="gap-2">
+          {open ? (
+            <>
+              <Button type="submit" disabled={busy}>
+                {personal ? "Turn on accounts" : "Switch to just me"}
+              </Button>
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <Button type="button" variant="outline" onClick={() => setOpen(true)}>
+              {personal ? "Set up accounts" : "Switch to just me"}
+            </Button>
+          )}
+        </CardFooter>
+      </form>
+    </Card>
   )
 }
 
@@ -62,6 +207,8 @@ function General() {
   const set = (k: keyof SettingsData) => (v: string) => setS({ ...s, [k]: v })
   return (
     <div className="grid grid-cols-1 items-start gap-4 @4xl/main:grid-cols-2">
+      <DefaultBrowser />
+      <AccountMode />
       <Card>
         <CardHeader>
           <CardTitle>Your real browser</CardTitle>
