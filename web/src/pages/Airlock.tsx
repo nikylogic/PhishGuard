@@ -572,6 +572,12 @@ function Panels({ d }: { d: Scan }) {
                   : "Not hidden (Hide my IP is off)",
             ],
             ["Certificate", tls.issuer ? `${tls.subjectName} · issued by ${tls.issuer}` : "–"],
+            [
+              "Website age",
+              p.domain_age?.age_days != null
+                ? `${p.domain_age.how === "registered" ? "Registered" : "First seen online"} ${p.domain_age.age_days} day${p.domain_age.age_days === 1 ? "" : "s"} ago (${p.domain_age.source})`
+                : "Not looked up (well-known site, free hosting, or no answer)",
+            ],
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             ["Blocked by PhishGuard", <Tags items={(p.blocked || []).map((b: any) => `${b.url} (${b.reason})`)} />],
             ["Websites contacted", <Tags items={p.request_domains} />],

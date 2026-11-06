@@ -5,6 +5,8 @@ One Chrome process stays warm. Every capture gets a brand-new incognito context
 straight afterwards. All Playwright calls must happen on ONE thread; worker.py
 makes sure of that.
 """
+import base64
+import hashlib
 import ipaddress
 import json
 import secrets
@@ -43,6 +45,22 @@ MAX_EVENTS = 300
 MAX_DOWNLOAD = 25 * 1024 * 1024
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36")
+
+FAVICON_JS = r"""
+async (href) => {
+  try {
+    const u = new URL(href, location.href);
+    if (u.origin !== location.origin) return "";
+    const ctl = new AbortController(); setTimeout(() => ctl.abort(), 3000);
+    const r = await fetch(u.href, { signal: ctl.signal, credentials: "omit" });
+    if (!r.ok) return "";
+    const b = new Uint8Array(await r.arrayBuffer());
+    if (!b.length || b.length > 300000) return "";
+    let s = ""; for (let i = 0; i < b.length; i += 8192) s += String.fromCharCode(...b.subarray(i, i + 8192));
+    return btoa(s);
+  } catch (e) { return ""; }
+}
+"""
 
 EXTRACT_JS = r"""
 () => {
@@ -85,7 +103,9 @@ EXTRACT_JS = r"""
     }
   }
   const forms = [...document.forms].slice(0, 20).map(f => ({
-    action: f.action || location.href,
+    // getAttribute, not f.action: a field named "action" inside the form hides the property.
+    action: (() => { try { return new URL(f.getAttribute("action") || location.href, location.href).href; }
+                     catch (e) { return location.href; } })(),
     method: (f.method || "get").toLowerCase(),
     password: !!f.querySelector("input[type=password]"),
     inputs: [...f.elements].slice(0, 25).map(e => (e.type || e.tagName || "").toLowerCase()),
@@ -97,8 +117,25 @@ EXTRACT_JS = r"""
                         .filter(Boolean))];
   let inline = "";
   for (const s of document.scripts) { if (!s.src && inline.length < 200000) inline += (s.text || "").slice(0, 50000) + "\n"; }
+  // Identity and intent: what the page says it is, and what it asks you to type.
+  const short = (v, n = 60) => String(v || "").toLowerCase().replace(/\s+/g, " ").trim().slice(0, n);
+  const shown = (el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+  const inputs = [...document.querySelectorAll("input, select, textarea")].filter(shown).slice(0, 40)
+    .map(e => ({ type: short(e.type || e.tagName, 20), name: short(e.name), id: short(e.id),
+                 ac: short(e.autocomplete, 30), ph: short(e.placeholder), label: short(e.labels && e.labels[0] && e.labels[0].innerText),
+                 inform: !!e.form }));
+  const images = [...document.images].filter(shown).slice(0, 40).map(i => {
+    const r = i.getBoundingClientRect();
+    let src = ""; try { src = new URL(i.currentSrc || i.src, location.href).href.slice(0, 300); } catch (e) {}
+    return { alt: short(i.alt, 80), src, top: Math.round(r.top + scrollY), w: Math.round(r.width), h: Math.round(r.height) };
+  });
+  const icon = document.querySelector("link[rel~='icon'], link[rel='shortcut icon'], link[rel='apple-touch-icon']");
+  let favicon = ""; try { favicon = new URL(icon ? icon.getAttribute("href") : "/favicon.ico", location.href).href.slice(0, 500); } catch (e) {}
+  const meta = (k) => { const m = document.querySelector(`meta[property='${k}'], meta[name='${k}']`); return m ? short(m.content, 120) : ""; };
   return { visible: vis.trim().slice(0, LIM), hidden: hid.trim().slice(0, LIM), forms, loose_password_fields: loosePw,
-           link_schemes: schemes, inline_script: inline, title: document.title || "" };
+           link_schemes: schemes, inline_script: inline, title: document.title || "",
+           inputs, images, favicon, site_name: meta("og:site_name") || meta("application-name"),
+           description: meta("description") || meta("og:description") };
 }
 """
 
@@ -127,6 +164,13 @@ class Capture:
     tls: dict = field(default_factory=dict)
     timings: dict = field(default_factory=dict)
     route: str = ""                                     # "Tor", "Cloudflare WARP", "Your proxy" or "" (direct)
+    # Identity: what the page says it is (for the brand check) and what it asks you to type.
+    inputs: list = field(default_factory=list)          # [{type, name, id, ac, ph, label, inform}]
+    images: list = field(default_factory=list)          # [{alt, src, top, w, h}]
+    favicon: str = ""                                   # favicon address
+    favicon_sha256: str = ""                            # fingerprint of the favicon file
+    site_name: str = ""                                 # og:site_name / application-name
+    description: str = ""
 
     def to_dict(self):
         return asdict(self)
@@ -216,6 +260,24 @@ class Sandbox:
         self.egress.stop()
 
     # --- the capture -------------------------------------------------------------------
+    @staticmethod
+    def _favicon_hash(ctx, favicon: str) -> str:
+        """SHA-256 of the favicon, fetched by the sandbox page itself (so through the gatekeeper).
+        Phishing kits often copy a brand's favicon byte for byte, so its fingerprint can name the
+        brand. A favicon on another website cannot be read this way; its address is still checked."""
+        if not favicon.startswith(("http://", "https://")) or not ctx.pages:
+            return ""
+        try:
+            data = ctx.pages[0].evaluate(FAVICON_JS, favicon)
+        except PWError:
+            return ""
+        if not data:
+            return ""
+        try:
+            return hashlib.sha256(base64.b64decode(data)).hexdigest()
+        except ValueError:
+            return ""
+
     def capture(self, url: str, scan_id: int | str) -> Capture:
         self.ensure()
         cap = Capture(url=url)
@@ -358,8 +420,14 @@ class Sandbox:
                     cap.loose_password_fields = info["loose_password_fields"]
                     cap.link_schemes = info["link_schemes"]
                     cap.inline_script = info["inline_script"]
+                    cap.inputs = info.get("inputs") or []
+                    cap.images = info.get("images") or []
+                    cap.favicon = info.get("favicon") or ""
+                    cap.site_name = info.get("site_name") or ""
+                    cap.description = info.get("description") or ""
                 except PWError:
                     pass
+                cap.favicon_sha256 = self._favicon_hash(ctx, cap.favicon)
                 try:
                     self.shots_dir.mkdir(parents=True, exist_ok=True)
                     shot = self.shots_dir / f"{scan_id}.jpg"

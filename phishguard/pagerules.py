@@ -8,6 +8,7 @@ import time
 from urllib.parse import urlsplit
 
 from . import filetypes, intel
+from .identity import identity_findings
 from .rules import RULES, Finding, make, url_findings, verdict
 from .urltools import UnsafeURL, clean_url, domain_matches, parse, registrable_domain
 
@@ -18,6 +19,14 @@ RULES.update({
     "BRAND_LOGIN":     ("phishing", 30, "This page looks like a {brand} login, but it is not on {brand}'s website."),
     "REDIRECTED_AWAY": ("phishing", 10, "The link bounced through {hops} hop(s) and ended on a different website ({final})."),
     "CERT_NEW":        ("phishing", 10, "The website's security certificate is only {days} day(s) old."),
+    # identity check (identity.py) and domain facts (domaininfo.py)
+    "IMPERSONATION_LOGIN": ("phishing", 70, "This page presents itself as {brand} and asks for {what}, but it is not on {brand}'s website ({site})."),
+    "IMPERSONATION_ID":    ("phishing", 50, "This page presents itself as {brand} and asks for {what}, but it is not on {brand}'s website ({site})."),
+    "IMPERSONATION":       ("phishing", 15, "This page presents itself as {brand}, but it is not on {brand}'s website ({site})."),
+    "LOGIN_FREE_HOST":     ("phishing", 30, "This page asks for {what} on a free website-hosting service ({host}), where anyone can publish a page."),
+    "LOGIN_NEW_DOMAIN":    ("phishing", 40, "This page asks for {what} on a website registered only {days} day(s) ago."),
+    "DOMAIN_NEW":          ("phishing", 10, "The website {reg} was {how} only {days} day(s) ago."),
+    "PHISH_LISTED":        ("phishing", 100, "This address is on a public list of reported phishing sites ({source})."),
     # malware
     "MALWARE_URL":     ("malware", 100, "This address is on the known-malware list."),
     "DL_KNOWN_BAD":    ("malware", 100, "The downloaded file matches a known malware fingerprint (SHA-256)."),
@@ -50,8 +59,9 @@ CLICKFIX_RE = re.compile(
 FAKE_ALERT_RE = re.compile(
     r"(your|this) (computer|pc|device|windows|system) (is|has been|was) (infected|locked|blocked|compromised)|"
     r"virus(es)? (detected|found)|call (microsoft|windows|apple|technical|tech) support|"
-    r"do not (close|restart|shut down) (this|your)|toll[- ]free|security alert|"
+    r"do not (close|restart|shut down) (this|your)|"
     r"trojan|spyware (detected|alert)", re.I)
+MILD_ALERT_RE = re.compile(r"toll[- ]free|security alert", re.I)
 MINER_RE = re.compile(r"coinhive|cryptonight|crypto-?loot|coinimp|webminepool|hashrate|"
                       r"\bminer\.start\(|monero|\bxmr\b|throttle\s*:", re.I)
 DANGEROUS_SCHEMES = {
@@ -60,7 +70,10 @@ DANGEROUS_SCHEMES = {
     "ms-search", "msteams", "ms-gamingoverlay", "file", "jnlp", "steam", "itms-services",
     "vbscript", "res", "mk", "hcp", "ms-its",
 }
-HARMLESS_SCHEMES = {"http", "https", "mailto", "tel", "sms", "javascript", "data", "blob", "about"}
+HARMLESS_SCHEMES = {"http", "https", "mailto", "tel", "sms", "javascript", "data", "blob", "about",
+                    # The browser's own pages and extensions: sites probe these (ad-blocker and
+                    # extension checks); they cannot start a Windows program.
+                    "chrome-extension", "moz-extension", "ms-browser-extension", "extension", "chrome", "edge"}
 
 
 def _host(url: str) -> str:
@@ -70,19 +83,23 @@ def _host(url: str) -> str:
         return ""
 
 
+def _web(url) -> bool:
+    return isinstance(url, str) and url.lower().startswith(("http://", "https://"))
+
+
+def _same_owner(a: str, b: str) -> bool:
+    """Both sites belong to the same brand, or both are in a verified zone (hdfcbank.com ->
+    hdfc.bank.in, epfindia.gov.in -> epfo.gov.in)."""
+    if intel.is_restricted(b) and (intel.is_restricted(a) or a in intel.ALL_BRAND_DOMAINS):
+        return True     # a bank or government site moving to its verified .bank.in / .gov.in address
+    return any(a in br["domains"] and b in br["domains"] for br in intel.BRAND_INFO.values())
+
+
 def _reg(url: str) -> str:
     try:
         return registrable_domain(url)
     except ValueError:
         return _host(url)
-
-
-def _brand_in_title(title: str) -> str | None:
-    compact = re.sub(r"[^a-z0-9]", "", title.lower())
-    for brand in intel.BRANDS:
-        if len(brand) >= 4 and brand in compact:
-            return brand
-    return None
 
 
 def tracker_hosts(cap: dict, intel_db) -> list[str]:
@@ -93,9 +110,11 @@ def tracker_hosts(cap: dict, intel_db) -> list[str]:
 def page_findings(cap: dict, intel_db, allowlist=(), blocklist=(), now: float | None = None) -> list[Finding]:
     f: list[Finding] = []
     start = cap.get("url", "")
-    final = cap.get("final_url") or start
+    chain = [h["url"] for h in cap.get("redirects") or [] if _web(h.get("url"))] or [start]
+    # The browser's own error page (chrome-error://...) is not a website the link went to.
+    final = cap.get("final_url") if _web(cap.get("final_url")) else (chain[-1] if chain else start)
+    final = final or start
     start_reg, final_reg = _reg(start), _reg(final)
-    chain = [h["url"] for h in cap.get("redirects") or []] or [start]
     events = cap.get("events") or []
     kinds = {e.get("t") for e in events}
 
@@ -105,15 +124,15 @@ def page_findings(cap: dict, intel_db, allowlist=(), blocklist=(), now: float | 
     if has_pw and final.lower().startswith("http://"):
         f.append(make("PW_NO_HTTPS", "page"))
     for form in pw_forms:
-        target = _reg(form.get("action") or final)
-        if target and target != final_reg:
+        action = form.get("action") or final
+        target = _reg(action) if _web(action) else ""
+        if target and target != final_reg and not _same_owner(target, final_reg):
             f.append(make("PW_OFFSITE", "page", target=target))
             break
-    brand = _brand_in_title(cap.get("title") or "")
-    if brand and has_pw and final_reg not in intel.BRANDS[brand]:
-        f.append(make("BRAND_LOGIN", "page", brand=intel.brand_name(brand)))
+    # Which brand the page claims to be, and whether it is really that brand: identity.py.
     hops = max(0, len(chain) - 1)
-    if hops > 3 or (final_reg and start_reg and final_reg != start_reg):
+    moved = final_reg and start_reg and final_reg != start_reg and not _same_owner(start_reg, final_reg)
+    if hops > 3 or moved:
         f.append(make("REDIRECTED_AWAY", "page", hops=hops, final=final_reg or final))
     valid_from = (cap.get("tls") or {}).get("validFrom")
     if valid_from:
@@ -179,7 +198,11 @@ def page_findings(cap: dict, intel_db, allowlist=(), blocklist=(), now: float | 
     if miner_host or ("wasm" in kinds and MINER_RE.search(script)):
         f.append(make("MINER", "page"))
     text = f"{cap.get('title', '')} {cap.get('visible_text', '')}"
-    if FAKE_ALERT_RE.search(text) and kinds & {"fullscreen", "keylock", "unload_trap"}:
+    # Scareware: alarming words plus a trap. "Security alert" and "toll-free" also appear in banks'
+    # fraud-awareness banners, and many ordinary pages warn before you leave, so the mild words
+    # only count with a real trap (full screen, keyboard lock).
+    traps = kinds & {"fullscreen", "keylock", "unload_trap"}
+    if (FAKE_ALERT_RE.search(text) and traps) or (MILD_ALERT_RE.search(text) and traps - {"unload_trap"}):
         f.append(make("FAKE_ALERT", "page"))
     if "keylock" in kinds:
         f.append(make("KEYBOARD_LOCK", "page"))
@@ -191,7 +214,8 @@ def page_findings(cap: dict, intel_db, allowlist=(), blocklist=(), now: float | 
         f.append(make("OBFUSCATED", "page"))
     trusted = set(allowlist) | intel.ALL_BRAND_DOMAINS
     if (len(chain) > 1 and start_reg in trusted and final_reg and final_reg != start_reg
-            and not any(domain_matches(_host(final), t) for t in trusted)):
+            and not any(domain_matches(_host(final), t) for t in trusted)
+            and not _same_owner(start_reg, final_reg) and not intel.is_established(_host(final), final_reg)):
         f.append(make("OPEN_REDIRECT", "page", trusted=start_reg, final=final_reg))
     return f
 
@@ -208,9 +232,22 @@ def merge(*groups) -> list[Finding]:
     return out
 
 
-def analyse(cap: dict, intel_db, allowlist=(), blocklist=(), extra=(), ignore=()) -> dict:
+def list_findings(cap: dict, feeds) -> list[Finding]:
+    """Every address the page went through, against the public phishing lists (feeds.py)."""
+    if feeds is None:
+        return []
+    chain = [h["url"] for h in cap.get("redirects") or []]
+    for u in dict.fromkeys([cap.get("url"), *chain, cap.get("final_url")]):
+        if u and (source := feeds.check(u)):
+            return [make("PHISH_LISTED", "page", source=source)]
+    return []
+
+
+def analyse(cap: dict, intel_db, allowlist=(), blocklist=(), extra=(), ignore=(), facts=None, feeds=None,
+            identity=True) -> dict:
     """The full verdict for a finished capture: findings, scores and a privacy report.
 
+    facts: what domaininfo.py learned about the website (its age); feeds: the phishing lists.
     ignore: rule codes to leave out (used only by tests whose local server is plain http)."""
     url_level = []
     for u in dict.fromkeys([cap.get("url"), cap.get("final_url")]):
@@ -219,7 +256,10 @@ def analyse(cap: dict, intel_db, allowlist=(), blocklist=(), extra=(), ignore=()
                 url_level.extend(url_findings(parse(u), blocklist=blocklist))
             except UnsafeURL:
                 pass
-    findings = merge(url_level, page_findings(cap, intel_db, allowlist, blocklist), extra)
+    allowed = any(domain_matches(_host(cap.get("final_url") or cap.get("url") or ""), d) for d in allowlist)
+    id_level = identity_findings(cap, facts) if identity and not allowed else []
+    findings = merge(list_findings(cap, feeds), url_level, page_findings(cap, intel_db, allowlist, blocklist),
+                     id_level, extra)
     findings = [x for x in findings if x.code not in ignore]
     v = verdict(findings)
     events = cap.get("events") or []

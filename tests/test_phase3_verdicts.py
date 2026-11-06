@@ -56,12 +56,17 @@ def test_password_sent_offsite():
 
 
 def test_brand_login_only_with_password_field_and_wrong_domain():
-    fs = page_findings(cap(title="PayPal: Log in", forms=[{"action": "", "password": True}]), INTEL)
-    assert any(f.code == "BRAND_LOGIN" and "PayPal login" in f.message for f in fs)
-    assert "BRAND_LOGIN" not in codes(cap(title="PayPal: Log in"))                      # no password field
+    """Now the identity check (identity.py): the page claims PayPal, asks for a password, and is
+    not on PayPal's website."""
+    fake = "https://secure-account-help.top/signin"
+    a = analyse(cap(url=fake, final_url=fake, title="PayPal: Log in", forms=[{"action": "", "password": True}]), INTEL)
+    assert any(f.code == "IMPERSONATION_LOGIN" and "PayPal" in f.message for f in a["findings"])
+    assert a["level"] == "danger"
+    plain = analyse(cap(url=fake, final_url=fake, title="PayPal: Log in"), INTEL)      # no password field
+    assert "IMPERSONATION_LOGIN" not in {f.code for f in plain["findings"]}
     real = cap(url="https://www.paypal.com/", final_url="https://www.paypal.com/signin",
                title="PayPal: Log in", forms=[{"action": "https://www.paypal.com/x", "password": True}])
-    assert "BRAND_LOGIN" not in codes(real)
+    assert not {"IMPERSONATION_LOGIN", "IMPERSONATION"} & {f.code for f in analyse(real, INTEL)["findings"]}
 
 
 def test_redirect_away_and_many_hops():

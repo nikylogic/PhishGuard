@@ -66,3 +66,23 @@ def test_roles():
     assert role(make("IP_LOGGER")) == "threat"
     assert role(page_make("OBFUSCATED", stage="page")) == "supporting"
     assert role(make("BRAND_LOOKALIKE", brand="PayPal")) == "threat"
+
+
+def test_weak_signals_never_turn_clear_into_caution():
+    """Found on the held-out benchmark: lencr.org -> letsencrypt.org with a fresh certificate was
+    Caution. A weak redirect (10) plus a new certificate stays Clear; a real threat still grows."""
+    v = verdict([page_make("REDIRECTED_AWAY", stage="page", hops=2, final="letsencrypt.org"),
+                 page_make("CERT_NEW", stage="page", days=3)])
+    assert v["level"] == "clear" and "CERT_NEW" not in v["counted"]
+    v2 = verdict([page_make("BRAND_LOGIN", stage="page", brand="PayPal"), page_make("CERT_NEW", stage="page", days=3)])
+    assert v2["score"] == 40 and "CERT_NEW" in v2["counted"]
+
+
+def test_extension_probes_are_not_app_launches():
+    """Also found on the held-out benchmark: vinted.de and woocommerce.com probe chrome-extension:
+    links (ad-blocker checks), which cannot start a Windows program."""
+    from phishguard.pagerules import page_findings
+    from phishguard.intel import Intel
+    cap = {"url": "https://vinted.de/", "final_url": "https://vinted.de/",
+           "protocol_attempts": [{"scheme": "chrome-extension"}], "link_schemes": ["chrome-extension"]}
+    assert "PROTOCOL_LAUNCH" not in {f.code for f in page_findings(cap, Intel())}

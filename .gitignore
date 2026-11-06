@@ -10,3 +10,5 @@ instance-demo/
 build/
 build-log.txt
 build-iss.txt
+benchmark-data/
+benchmark-data-collect*.log

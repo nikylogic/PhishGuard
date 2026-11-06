@@ -35,7 +35,7 @@ import time
 import urllib.request
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from urllib.parse import unquote, urlsplit
+from urllib.parse import unquote, urljoin, urlsplit
 
 # The Tor Expert Bundle 16.0 for 64-bit Windows. The hash comes from Tor's sha256sums-signed-build.txt,
 # whose signature was checked against the Tor Browser Developers key
@@ -194,8 +194,10 @@ def local_name(host: str) -> bool:
     return "." not in h or h == "localhost" or h.endswith(LOCAL_SUFFIXES)
 
 
-def whoami(up: Upstream | None, url: str = WHOAMI_URL, timeout: float = 25.0) -> dict:
-    """Ask a public service which address it sees: the proof that Hide my IP works."""
+def http_get(up: Upstream | None, url: str, timeout: float = 25.0, limit: int = 65536,
+             accept: str = "application/json", redirects: int = 3) -> tuple[int, bytes]:
+    """A plain GET, through the route when there is one (so lookups about a link are hidden
+    the same way the sandbox is). Returns (status, body). Follows a few redirects."""
     u = urlsplit(url)
     port = u.port or (443 if u.scheme == "https" else 80)
     if up:
@@ -205,19 +207,37 @@ def whoami(up: Upstream | None, url: str = WHOAMI_URL, timeout: float = 25.0) ->
     try:
         if u.scheme == "https":
             s = ssl.create_default_context().wrap_socket(s, server_hostname=u.hostname)
-        s.sendall(f"GET {u.path or '/'} HTTP/1.1\r\nHost: {u.hostname}\r\nAccept: application/json\r\n"
+        target = (u.path or "/") + (f"?{u.query}" if u.query else "")
+        s.sendall(f"GET {target} HTTP/1.1\r\nHost: {u.hostname}\r\nAccept: {accept}\r\n"
                   f"User-Agent: PhishGuard\r\nConnection: close\r\n\r\n".encode())
         data = rest
-        while len(data) < 65536:
-            chunk = s.recv(8192)
+        while len(data) < limit:
+            chunk = s.recv(65536)
             if not chunk:
                 break
             data += chunk
     finally:
         s.close()
     head, _, body = data.partition(b"\r\n\r\n")
-    if b"chunked" in head.lower():
+    lines = head.decode("latin-1").split("\r\n")
+    try:
+        status = int(lines[0].split()[1])
+    except (IndexError, ValueError):
+        raise OSError("the server gave an unexpected answer") from None
+    headers = {k.strip().lower(): v.strip() for k, _, v in (ln.partition(":") for ln in lines[1:])}
+    if status in (301, 302, 303, 307, 308) and redirects and headers.get("location"):
+        nxt = urljoin(url, headers["location"])
+        if urlsplit(nxt).scheme not in ("http", "https"):
+            raise OSError("bad redirect")
+        return http_get(up, nxt, timeout, limit, accept, redirects - 1)
+    if "chunked" in headers.get("transfer-encoding", "").lower():
         body = _dechunk(body)
+    return status, body
+
+
+def whoami(up: Upstream | None, url: str = WHOAMI_URL, timeout: float = 25.0) -> dict:
+    """Ask a public service which address it sees: the proof that Hide my IP works."""
+    _, body = http_get(up, url, timeout)
     try:
         out = json.loads(body.decode("utf-8", "replace"))
     except ValueError:

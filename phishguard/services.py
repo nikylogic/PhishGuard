@@ -13,9 +13,12 @@ import secrets
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from . import browser
 from . import privacy
+from .domaininfo import DomainInfo
+from .feeds import Feeds
 from . import db as dbmod
 from . import pagerules  # noqa: F401 - registers the page rules
 # The AI Guard is imported in _load_guard (background), not here.
@@ -24,7 +27,7 @@ from .llm import Reviewer, apply_opinion, provider_from_settings
 from .pagerules import analyse
 from .rules import Finding, make, role, url_findings, verdict
 from .sandbox import Capture
-from .urltools import UnsafeURL, domain_matches, parse
+from .urltools import UnsafeURL, domain_matches, parse, registrable_domain
 
 log = logging.getLogger("phishguard.service")
 
@@ -75,6 +78,12 @@ class ScanService:
             threading.Thread(target=self._load_guard, name="pg-guard-load", daemon=True).start()
         self.reviewer_factory = reviewer_factory or (lambda settings: Reviewer(provider_from_settings(settings)))
         self.llm_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="pg-llm")
+        # Phishing lists and domain age (feeds.py, domaininfo.py). Off until enable_lookups(), so
+        # tests never touch the network.
+        self.feeds = None
+        self.domains = None
+        self._facts: dict = {}
+        self.lookup_pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="pg-lookup")
         self.lock = threading.Lock()
         self.recover()
         self.write_allowlist_cache()
@@ -150,6 +159,36 @@ class ScanService:
         else:
             self.tor.stop()
 
+    # --- phishing lists and domain age -----------------------------------------------------------
+    def enable_lookups(self, feeds=None, domains=None):
+        self.feeds = feeds or Feeds(self.instance / "feeds").start()
+        self.domains = domains or DomainInfo(self.instance / "lookups", get=self._lookup_get)
+        return self
+
+    def _lookup_get(self, url, timeout, limit):
+        """Domain lookups take the same route as the sandbox. If Hide my IP is on but its route
+        is down, nothing is sent (privacy.Unavailable): the age is simply unknown."""
+        return privacy.http_get(self.privacy_route(), url, timeout, limit)
+
+    def _start_facts(self, sid, host, reg):
+        if self.domains is not None:
+            self._facts[sid] = (reg, self.lookup_pool.submit(self.domains.age, host, reg))
+
+    def _facts_for(self, sid, final_url) -> dict:
+        early = self._facts.pop(sid, None)
+        if self.domains is None:
+            return {}
+        try:
+            host, reg = (urlsplit(final_url).hostname or ""), registrable_domain(final_url)
+        except ValueError:
+            return {}
+        try:
+            if early and early[0] == reg:
+                return early[1].result(timeout=15)
+            return self.domains.age(host, reg)
+        except Exception:  # noqa: BLE001  unknown age is fine; never block the verdict
+            return {}
+
     # --- create -------------------------------------------------------------------------------
     def create_scan(self, raw_url: str, source: str, user_id=None) -> dict:
         p = parse(raw_url)                    # raises UnsafeURL for non-web links
@@ -175,6 +214,7 @@ class ScanService:
             con.close()
         if not blocked and self.worker is not None:
             # A blocked site is never opened, not even in the sandbox.
+            self._start_facts(sid, p.host, p.registrable)
             self.worker.submit(p.url, sid)
         return {"id": sid, "ticket": ticket, "allowlisted": any(domain_matches(p.host, d) for d in allow),
                 "blocked": blocked}
@@ -218,14 +258,18 @@ class ScanService:
                 hidden = self.guard.check(c.get("hidden_text") or "")
                 visible = self.guard.check(c.get("visible_text") or "")
                 guard_result = max(hidden, visible, key=lambda r: r["score"])
-                if hidden["label"] == "injection":
+                # The model alone flags cookie banners and menus on about a third of real pages
+                # (measured on 413 pages, Nov 2026). It counts only when an explicit injection
+                # phrase ("ignore previous instructions") confirms it; the score is still shown.
+                if hidden["label"] == "injection" and hidden.get("keywords"):
                     extra.append(make("PROMPT_INJECTION", "guard"))
                 for src_name, r in (("hidden", hidden), ("visible", visible)):
-                    if r["label"] == "injection":
+                    if r["label"] == "injection" and r.get("keywords"):
                         con.execute("INSERT INTO guard_events(scan_id, source, text_snippet, score, label) "
                                     "VALUES (?, 'page', ?, ?, ?)", (sid, f"[{src_name}] {r['chunk'][:280]}",
                                                                     r["score"], r["label"]))
-            v = analyse(c, self.intel, allowlist=allow, blocklist=block, extra=extra)
+            facts = self._facts_for(sid, c.get("final_url") or c.get("url") or "")
+            v = analyse(c, self.intel, allowlist=allow, blocklist=block, extra=extra, facts=facts, feeds=self.feeds)
             status = cap.status if cap.status in ("done", "partial", "failed") else "done"
             if status == "failed" and v["score"] == 0:
                 level = "caution"          # we could not look inside; never stamp CLEAR blind
@@ -238,6 +282,7 @@ class ScanService:
             page["hidden_text"] = (c.get("hidden_text") or "")[:2000]
             page["guard"] = guard_result
             page["privacy"] = v["privacy"]
+            page["domain_age"] = facts
             con.execute(
                 "UPDATE scans SET final_url = ?, status = ?, score = ?, level = ?, s_phishing = ?, s_malware = ?, "
                 "s_tracking = ?, s_abuse = ?, title = ?, screenshot = ?, redirect_json = ?, page_json = ?, "

@@ -221,7 +221,7 @@ def test_scan_flow_phishing_page(env):
     d = c.get(f"/api/scan/{sid}").get_json()
     assert d["status"] == "done" and d["level"] == "danger"
     codes = {f["code"] for f in d["findings"]}
-    assert {"PW_OFFSITE", "BRAND_LOGIN"} <= codes
+    assert {"PW_OFFSITE", "IMPERSONATION_LOGIN"} <= codes     # the identity check replaced BRAND_LOGIN
     assert d["s_phishing"] == d["score"]
 
 

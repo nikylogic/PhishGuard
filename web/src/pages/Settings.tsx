@@ -110,6 +110,79 @@ function DefaultBrowser() {
   )
 }
 
+type ListsStatus = {
+  enabled: boolean
+  ready: boolean
+  sources: { name: string; count: number; updated: number | null; error: string | null }[]
+}
+
+// The public phishing lists, downloaded every six hours and checked on this PC.
+function PhishingLists() {
+  const [st, setSt] = React.useState<ListsStatus | null>(null)
+  const [busy, setBusy] = React.useState(false)
+  const load = React.useCallback(() => api<ListsStatus>("/api/lists").then(setSt).catch(() => null), [])
+  React.useEffect(() => {
+    load()
+  }, [load])
+  const update = async () => {
+    setBusy(true)
+    try {
+      await api("/api/lists/update", { method: "POST" })
+      toast.success("Updating the lists…")
+      // The biggest list is about 11 MB; check back a few times.
+      for (const ms of [3000, 8000, 20000]) window.setTimeout(load, ms)
+    } catch (e) {
+      toast.error(errText(e))
+    } finally {
+      window.setTimeout(() => setBusy(false), 3000)
+    }
+  }
+  if (!st?.enabled) return null
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Phishing lists</CardTitle>
+        <CardDescription>
+          Public lists of reported phishing sites, updated every six hours. Links are checked against them on this PC; nothing is sent anywhere.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>List</TableHead>
+              <TableHead className="text-right">Entries</TableHead>
+              <TableHead className="text-right">Updated</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {st.sources.map((s) => (
+              <TableRow key={s.name}>
+                <TableCell>
+                  {s.name}
+                  {s.error && <div className="text-xs text-danger">Last update failed: {s.error}</div>}
+                </TableCell>
+                <TableCell className="text-right tabular-nums">{s.count.toLocaleString()}</TableCell>
+                <TableCell className="text-right text-muted-foreground">
+                  {s.updated ? ago(new Date(s.updated * 1000).toISOString()) : "not yet"}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+      {boot.user?.role === "admin" && (
+        <CardFooter>
+          <Button variant="outline" disabled={busy} onClick={update}>
+            {busy && <Spinner />}
+            Update now
+          </Button>
+        </CardFooter>
+      )}
+    </Card>
+  )
+}
+
 // Personal mode (just me, no password) or accounts (usernames, passwords, roles).
 function AccountMode() {
   const personal = boot.mode === "personal"
@@ -382,6 +455,7 @@ function General() {
   return (
     <div className="grid grid-cols-1 items-start gap-4 @4xl/main:grid-cols-2">
       <DefaultBrowser />
+      <PhishingLists />
       <HideMyIp />
       <AccountMode />
       <Card>

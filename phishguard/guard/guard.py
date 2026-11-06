@@ -22,9 +22,11 @@ PATTERNS = [re.compile(p, re.I) for p in (
     r"\bignore (all |any |the )?(previous|prior|above|earlier|preceding) (instructions|directives|rules|context|prompts?)",
     r"\bdisregard (all |any |the )?(previous|prior|above|earlier|your) (instructions|rules|guidelines|context)",
     r"\bforget (everything|all|your) (you were told|previous|prior|earlier|instructions)",
-    r"\b(new|updated|override|overwrite) (system )?(prompt|instructions?|rules)\b",
+    # "The new rules of loyalty" is marketing, so a bare "new rules" does not count.
+    r"\b(new|updated) system (prompt|instructions?)\b|\b(override|overwrite) (the |your |all )?(system )?(prompt|instructions?|rules)\b",
     r"\byou are now (in )?(developer|dan|jailbreak|unrestricted)",
-    r"\b(do anything now|dan mode|developer mode)\b",
+    # A bare "developer mode" is everyday (Android, Chrome); only the jailbreak names count.
+    r"\b(do anything now|dan mode)\b",
     r"\b(if you are|any|dear|note to|attention|for the) (an )?(ai|llm|language model|assistant|automated)\b.{0,60}\b(say|tell|rate|mark|classify|report|ignore|approve|confirm|respond|repeat)",
     r"\b(reveal|print|output|show) (your|the) (hidden |system )?(prompt|instructions)\b",
     r"\[/?system\]|<\|?(system|im_start)\|?>",

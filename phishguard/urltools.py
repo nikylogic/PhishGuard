@@ -11,7 +11,10 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import tldextract
 
-_extract = tldextract.TLDExtract(suffix_list_urls=(), cache_dir=None)
+# bank.in and fin.in: the RBI's verified zones for Indian banks and finance companies (2025). The
+# bundled public-suffix snapshot predates them, so without this every bank would be "bank.in".
+EXTRA_SUFFIXES = ("bank.in", "fin.in")
+_extract = tldextract.TLDExtract(suffix_list_urls=(), cache_dir=None, extra_suffixes=EXTRA_SUFFIXES)
 
 MAX_URL_LENGTH = 4096
 ALLOWED_SCHEMES = {"http", "https"}

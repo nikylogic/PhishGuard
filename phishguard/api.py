@@ -427,6 +427,28 @@ def privacy_save():
     return jsonify(_privacy_status())
 
 
+@bp.get("/lists")
+@login_required()
+def lists_status():
+    """The public phishing lists: how many entries each has and when it was last updated."""
+    feeds = svc().feeds
+    if feeds is None:
+        return jsonify(enabled=False, sources=[], hosts=0, urls=0, ready=False)
+    return jsonify(enabled=True, **feeds.status())
+
+
+@bp.post("/lists/update")
+@login_required("admin")
+def lists_update():
+    feeds = svc().feeds
+    if feeds is None:
+        return err("The phishing lists are off in this copy of PhishGuard.", 409)
+    import threading
+    threading.Thread(target=lambda: feeds.refresh(force=True), name="pg-feeds-now", daemon=True).start()
+    audit("lists", "update phishing lists")
+    return jsonify(enabled=True, **feeds.status()), 202
+
+
 @bp.post("/privacy/tor")
 @login_required("admin")
 def privacy_tor_download():

@@ -24,6 +24,7 @@ RULES = {
     "BRAND_LOOKALIKE":    ("phishing", 30, "The website name imitates {brand} but is not {brand}."),
     "BRAND_IMPERSONATION": ("phishing", 30, "The website uses the name {brand} but is not run by {brand}."),
     "BRAND_IN_SUBDOMAIN": ("phishing", 25, "'{brand}' appears in the address, but the real website is {reg}."),
+    "BRAND_IN_NAME":      ("phishing", 25, "The address contains the name {brand} ('{name}'), but it is not {brand}'s website."),
     "MANY_SUBDOMAINS":    ("phishing", 10, "The address is padded with many sub-domains to look official."),
     "RISKY_TLD":          ("phishing", 10, "The '.{tld}' ending is heavily used by scam sites."),
     "SHORTENER":          ("phishing", 10, "A link shortener hides where this link really goes."),
@@ -57,7 +58,11 @@ def make(code: str, stage: str = "url", weight: int | None = None, **fmt) -> Fin
 # --- URL rules -----------------------------------------------------------------------
 
 def _brand_findings(p: ParsedURL) -> list[Finding]:
-    if p.is_ip or p.registrable in intel.ALL_BRAND_DOMAINS:
+    if p.is_ip or p.registrable in intel.ALL_BRAND_DOMAINS or intel.is_restricted(p.registrable):
+        return []
+    # A popular site under its own name is not a look-alike of a brand (hsbc.com is not a fake
+    # hdfc, cooking.com is not a fake booking.com). Free hosting platforms get no such pass.
+    if intel.is_established(p.host, p.registrable):
         return []
     name_u = to_unicode_host(p.domain_name.lower())
     # (as written, de-confused) pairs for the main name and its hyphen parts
@@ -70,7 +75,7 @@ def _brand_findings(p: ParsedURL) -> list[Finding]:
     for brand, homes in intel.BRANDS.items():
         if p.registrable in homes:
             continue
-        limit = 2 if len(brand) >= 9 else 1 if len(brand) >= 6 else 0
+        limit = 0 if brand in intel.NO_FUZZ else 2 if len(brand) >= 9 else 1 if len(brand) >= 6 else 0
         hit = None
         for tok, dc in tokens:
             if tok == brand:
@@ -87,7 +92,27 @@ def _brand_findings(p: ParsedURL) -> list[Finding]:
             out.append(make("BRAND_IN_SUBDOMAIN", brand=intel.brand_name(brand), reg=p.registrable))
         if out:
             break   # one brand finding is enough; stacking them would double-count
+    if not out:
+        out = _brand_inside(p)
     return out[:1]   # one brand finding is enough; stacking them would double-count
+
+
+def _brand_inside(p: ParsedURL) -> list[Finding]:
+    """A brand name glued inside a longer name: googleplaydown.com, office365licensingsupport.com,
+    facebooklogin17.blogspot.com. Tokens that are also ordinary words (apple, steam, booking) are
+    left out, and short ones (usps, hdfc) only count at the start of a name."""
+    labels = [to_unicode_host(x) for x in (p.subdomain.lower().split(".") + [p.domain_name.lower()]) if x]
+    for brand, homes in intel.BRANDS.items():
+        if brand in intel.NO_FUZZ or len(brand) < 4 or p.registrable in homes:
+            continue
+        for label in labels:
+            for part in {label, deconfuse(label)}:
+                at = part.find(brand)
+                if at < 0 or part == brand:
+                    continue
+                if len(brand) >= 5 or at == 0:
+                    return [make("BRAND_IN_NAME", brand=intel.brand_name(brand), name=label)]
+    return []
 
 
 def url_findings(p: ParsedURL, blocklist=()) -> list[Finding]:
@@ -180,7 +205,9 @@ def level_for(score: int) -> str:
 # clicks. Weak signals that are also common on big, honest sites (scrambled code, long links)
 # only add to a verdict that something stronger already started (corroboration).
 THREAT_TRACKING = frozenset({"IP_LOGGER", "IP_LOGGER_HOP"})
-SUPPORTING = frozenset({"OBFUSCATED", "LONG_URL", "MANY_HYPHENS", "REDIRECT_PARAM"})
+# Certificates now renew every few weeks, and news sites ask to send notifications, so a new
+# certificate or a permission prompt only adds to a real threat.
+SUPPORTING = frozenset({"OBFUSCATED", "LONG_URL", "MANY_HYPHENS", "REDIRECT_PARAM", "CERT_NEW", "PERMISSION_GRAB"})
 
 
 def role(x: Finding) -> str:
@@ -193,7 +220,11 @@ def role(x: Finding) -> str:
 def verdict(findings) -> dict:
     subs = sub_scores(findings)          # every finding, for the breakdown bars
     threats = [x for x in findings if role(x) == "threat"]
-    counted = [*threats, *(x for x in findings if role(x) == "supporting")] if threats else []
+    # Weak signals only strengthen a verdict the threats already started: they can turn Caution
+    # into Danger, never Clear into Caution (lencr.org -> letsencrypt.org plus a fresh
+    # certificate is not suspicious).
+    started = threats and max(sub_scores(threats).values()) >= 20
+    counted = [*threats, *(x for x in findings if role(x) == "supporting")] if started else threats
     score = max(sub_scores(counted).values())
     return {"score": score, "level": level_for(score), "subs": subs,
             "counted": sorted({x.code for x in counted})}

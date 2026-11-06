@@ -4,56 +4,106 @@ These lists are deliberately small and readable. Larger lists (trackers, miners,
 malware URLs and hashes) are loaded from files in phishguard/data/ in Phase 3.
 """
 
-# Brand name -> its real registrable domains. Used to spot lookalikes.
-BRANDS = {
-    "paypal": {"paypal.com", "paypal.me"},
-    "google": {"google.com", "google.co.in", "youtube.com", "gmail.com", "goo.gl", "g.co"},
-    "gmail": {"gmail.com", "google.com"},
-    "youtube": {"youtube.com", "youtu.be"},
-    "microsoft": {"microsoft.com", "live.com", "office.com", "microsoftonline.com", "outlook.com"},
-    "outlook": {"outlook.com", "live.com", "office.com", "microsoft.com"},
-    "office": {"office.com", "microsoft.com", "microsoftonline.com"},
-    "apple": {"apple.com", "icloud.com"},
-    "icloud": {"icloud.com", "apple.com"},
-    "amazon": {"amazon.com", "amazon.in", "amazon.co.uk", "amzn.to", "aws.amazon.com"},
-    "facebook": {"facebook.com", "fb.com", "fb.me"},
-    "instagram": {"instagram.com"},
-    "whatsapp": {"whatsapp.com", "wa.me"},
-    "netflix": {"netflix.com"},
-    "linkedin": {"linkedin.com", "lnkd.in"},
-    "dropbox": {"dropbox.com"},
-    "github": {"github.com", "github.io"},
-    "yahoo": {"yahoo.com"},
-    "flipkart": {"flipkart.com"},
-    "paytm": {"paytm.com"},
-    "phonepe": {"phonepe.com"},
-    "hdfcbank": {"hdfcbank.com"},
-    "icicibank": {"icicibank.com"},
-    "axisbank": {"axisbank.com"},
-    "onlinesbi": {"onlinesbi.sbi", "sbi.co.in"},
-    "irctc": {"irctc.co.in"},
-    "incometax": {"incometax.gov.in"},
-    "binance": {"binance.com"},
-    "coinbase": {"coinbase.com"},
-    "steam": {"steampowered.com", "steamcommunity.com"},
-    "discord": {"discord.com", "discord.gg"},
-    "telegram": {"telegram.org", "t.me"},
-    "dhl": {"dhl.com"},
-    "fedex": {"fedex.com"},
-}
-ALL_BRAND_DOMAINS = set().union(*BRANDS.values())
+import json as _json
+from pathlib import Path as _P
 
-# How each brand is written for people.
-BRAND_DISPLAY = {
-    "paypal": "PayPal", "youtube": "YouTube", "icloud": "iCloud", "linkedin": "LinkedIn",
-    "github": "GitHub", "whatsapp": "WhatsApp", "phonepe": "PhonePe", "hdfcbank": "HDFC Bank",
-    "icicibank": "ICICI Bank", "axisbank": "Axis Bank", "onlinesbi": "SBI", "irctc": "IRCTC",
-    "incometax": "Income Tax India", "dhl": "DHL", "fedex": "FedEx",
+# --- brands (phishguard/data/brands.json) -----------------------------------------------
+# Each brand: its real registrable domains, how it appears in addresses (tokens) and how a page
+# names it (words). The URL rules work per token; the identity check (identity.py) per brand.
+_BRAND_FILE = _P(__file__).with_name("data") / "brands.json"
+BRAND_INFO: dict[str, dict] = {
+    k: {"key": k, "name": v["name"], "domains": set(v["domains"]), "tokens": list(v.get("tokens", [])),
+        "words": list(v.get("words", [])), "strict": bool(v.get("strict")), "fuzzy": v.get("fuzzy", True),
+        "favicons": set(v.get("favicons", []))}
+    for k, v in _json.loads(_BRAND_FILE.read_text(encoding="utf-8"))["brands"].items()
 }
+
+# Token -> the real domains of the brand(s) it stands for (used by the URL rules).
+BRANDS: dict[str, set[str]] = {}
+BRAND_DISPLAY: dict[str, str] = {}
+NO_FUZZ: set[str] = set()           # tokens that are also ordinary words: exact matches only
+for _b in BRAND_INFO.values():
+    for _t in _b["tokens"]:
+        BRANDS.setdefault(_t, set()).update(_b["domains"])
+        BRAND_DISPLAY.setdefault(_t, _b["name"])
+        # An ordinary word ("apple", "steam", "booking") is matched exactly, never fuzzily or
+        # inside longer names; distinctive tokens of the same brand ("appleid") still are.
+        if (_b["strict"] and _t in [w for w in _b["words"] if " " not in w]) or not _b["fuzzy"]:
+            NO_FUZZ.add(_t)
+ALL_BRAND_DOMAINS = set().union(*BRANDS.values())
+# Favicon fingerprint -> brand. A fingerprint two brands share is a generic icon (a hosting or
+# framework default), so it identifies no one and is left out.
+_fav_count: dict[str, int] = {}
+for _b in BRAND_INFO.values():
+    for _h in _b["favicons"]:
+        _fav_count[_h] = _fav_count.get(_h, 0) + 1
+FAVICON_BRANDS = {h: b["key"] for b in BRAND_INFO.values() for h in b["favicons"] if _fav_count[h] == 1}
 
 
 def brand_name(brand: str) -> str:
+    if brand in BRAND_INFO:
+        return BRAND_INFO[brand]["name"]
     return BRAND_DISPLAY.get(brand, brand.capitalize())
+
+
+# --- popular domains, free hosting, restricted zones -------------------------------------
+
+def _lines(name: str) -> set[str]:
+    path = _P(__file__).with_name("data") / name
+    if not path.exists():
+        return set()
+    return {ln.strip().lower() for ln in path.read_text(encoding="utf-8").splitlines()
+            if ln.strip() and not ln.startswith("#")}
+
+
+# Tranco top 10,000 registrable domains. Used only to keep a shared phishing list or a look-alike
+# rule from condemning a whole popular domain; never as proof that a page is safe (an NDSS 2026
+# study found top lists cover a minority of false alarms, and expired listed domains get reused).
+POPULAR = _lines("popular.txt")
+
+# Platforms where anyone can publish a site under the platform's own name. Most phishing now lives
+# here (vercel.app, pages.dev, blogspot ...), so these never count as "popular" or "established".
+FREE_HOSTS = {
+    "vercel.app", "pages.dev", "workers.dev", "netlify.app", "github.io", "gitlab.io", "blogspot.com",
+    "weebly.com", "weeblysite.com", "wixsite.com", "wix.com", "square.site", "cpanel.site", "typedream.app",
+    "gitbook.io", "firebaseapp.com", "web.app", "glitch.me", "replit.app", "repl.co", "replit.dev",
+    "000webhostapp.com", "duckdns.org", "ngrok-free.app", "ngrok.io", "ngrok.app", "r2.dev", "onrender.com",
+    "herokuapp.com", "azurewebsites.net", "amplifyapp.com", "surge.sh", "framer.website", "framer.app",
+    "webflow.io", "wordpress.com", "godaddysites.com", "mystrikingly.com", "jimdosite.com", "carrd.co",
+    "notion.site", "appspot.com", "firebasestorage.app", "translate.goog", "ipfs.io", "dweb.link",
+    "fleek.co", "on-fleek.app", "4everland.app", "backblazeb2.com", "b-cdn.net", "myshopify.com",
+    "bubbleapps.io", "softr.app", "glide.page", "webcindario.com", "yolasite.com", "site123.me",
+    "sharepoint.com", "my.canva.site", "canva.site", "start.page", "linktr.ee", "lovable.app",
+    "bolt.host", "netlify.com", "codesandbox.io", "csb.app", "stackblitz.io", "deno.dev", "fly.dev",
+    "railway.app", "up.railway.app", "koyeb.app", "pythonanywhere.com", "000webhost.com", "byethost.com",
+    "infinityfreeapp.com", "rf.gd", "epizy.com", "freevar.com", "unaux.com", "wuaze.com", "kesug.com",
+}
+# Hosts on big domains where anyone can publish under one shared host name.
+FREE_HOST_NAMES = {
+    "sites.google.com", "docs.google.com", "forms.gle", "drive.google.com", "storage.googleapis.com",
+    "firebasestorage.googleapis.com", "script.google.com", "forms.office.com", "s3.amazonaws.com",
+    "notion.so", "www.notion.so",
+    "form.jotform.com", "typeform.com", "forms.zohopublic.in", "pub.dev",
+}
+# Zones only verified organisations can register (Indian banks moved to .bank.in in 2025).
+RESTRICTED = ("gov.in", "nic.in", "bank.in", "ac.in", "edu.in", "res.in", "mil.in", "gov", "mil", "edu",
+              "gov.uk", "ac.uk", "gov.au", "edu.au", "gc.ca", "bank", "sbi", "hsbc", "google", "microsoft",
+              "apple", "amazon", "barclays", "citi", "chase", "icici", "hdfc", "hdfcbank", "axisbank")
+
+
+def is_free_host(host: str, reg: str) -> bool:
+    host = (host or "").lower().removeprefix("www.")
+    return reg in FREE_HOSTS or host in FREE_HOST_NAMES or any(host.endswith("." + h) for h in FREE_HOSTS)
+
+
+def is_restricted(reg: str) -> bool:
+    return any(reg == z or reg.endswith("." + z) for z in RESTRICTED)
+
+
+def is_established(host: str, reg: str) -> bool:
+    """A popular site under its own name (not a page on a free hosting platform)."""
+    return reg in POPULAR and not is_free_host(host, reg)
+
 
 URL_SHORTENERS = {
     "bit.ly", "tinyurl.com", "t.co", "goo.gl", "is.gd", "ow.ly", "cutt.ly", "rebrand.ly",

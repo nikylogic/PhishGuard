@@ -94,6 +94,7 @@ def create_app(overrides: dict | None = None) -> Flask:
         from .services import ScanService
         service = ScanService(app.config["DATABASE"], instance)
         if app.config.get("START_WORKER"):
+            service.enable_lookups()           # phishing lists + domain age (network)
             from .sandbox import Sandbox
             from .worker import ScanWorker
             service.worker = ScanWorker(
