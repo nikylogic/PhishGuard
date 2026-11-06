@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>{{ title }} · PhishGuard</title>
+  <link rel="icon" href="{{ url_for('static', filename='mark.svg') }}">
+    {% for css in assets.css %}<link rel="stylesheet" href="{{ url_for('static', filename=css) }}">
+  {% endfor %}
+</head>
+<body>
+  <div id="root"{% for k, v in boot.items() %} data-{{ k }}="{{ v }}"{% endfor %}></div>
+  <noscript>PhishGuard needs JavaScript turned on.</noscript>
+  <script type="module" src="{{ url_for('static', filename=assets.js) }}"></script>
+</body>
+</html>

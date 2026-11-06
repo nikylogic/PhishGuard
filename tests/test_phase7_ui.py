@@ -1,7 +1,8 @@
-"""Phase 7: the user interface, driven in a real Chrome by Playwright.
+"""Phase 7: the user interface, built with shadcn/ui (the dashboard-01 block), driven in a real Chrome.
 
 A live PhishGuard server is started on a free port with a fake worker (no sandbox),
 filled with a few finished checks, and then every screen is opened as a real user would.
+The UI is the React + shadcn/ui bundle in phishguard/static/app/, built from web/ (npm run build).
 """
 import re
 import socket
@@ -19,7 +20,9 @@ from phishguard.sandbox import Capture
 from phishguard.services import ScanService
 
 ROOT = Path(__file__).resolve().parent.parent
-CSS = (ROOT / "phishguard" / "static" / "app.css").read_text(encoding="utf-8")
+WEB = ROOT / "web"
+UI_SRC = WEB / "src"
+THEME_CSS = (UI_SRC / "index.css").read_text(encoding="utf-8")
 SHOTS = ROOT / "proof" / "phase-7" / "test-shots"
 
 CAPTURES = {
@@ -81,9 +84,9 @@ def session(live, user, password, width=1366, height=768, scheme="light"):
     page.on("console", lambda m: m.type == "error" and page.errors.append(m.text))
     page.on("pageerror", lambda e: page.errors.append(str(e)))
     page.goto(live["base"] + "/login")
-    page.fill("#username", user)
-    page.fill("#password", password)
-    page.click("button[type=submit]")
+    page.get_by_label("Username").fill(user)
+    page.get_by_label("Password").fill(password)
+    page.get_by_role("button", name="Log in").click()
     page.wait_for_url(live["base"] + "/")
     return page
 
@@ -100,20 +103,23 @@ def test_login_wrong_password_shows_error(live):
     page = ctx.new_page()
     limiter.fails.clear()
     page.goto(live["base"] + "/login")
-    page.fill("#username", "admin")
-    page.fill("#password", "nope")
-    page.click("button[type=submit]")
+    page.get_by_label("Username").fill("admin")
+    page.get_by_label("Password").fill("nope")
+    page.get_by_role("button", name="Log in").click()
+    page.get_by_role("alert").filter(has_text="Wrong username or password").wait_for()
     assert "/login" in page.url
-    assert page.locator(".error, [role=alert]").count() >= 1
     ctx.close()
 
 
-def test_home_shows_todays_counts_and_recent_checks(live):
+def test_home_is_the_dashboard_with_todays_counts(live):
     page = session(live, "admin", "correct-horse-1")
-    page.wait_for_selector(".ticket")
-    assert page.locator(".ticket").count() == 3
-    assert page.locator("#t-today").inner_text() == "3"
-    assert re.search(r"checked 3 links", page.locator("#summary").inner_text())
+    page.get_by_text("Checked today").wait_for()
+    card = page.locator("[data-slot=card]").filter(has_text="Checked today")
+    assert card.locator("[data-slot=card-title]").inner_text() == "3"
+    page.locator("table a[href^='/check/']").first.wait_for()
+    assert page.locator("table a[href^='/check/']").count() == 3
+    assert page.get_by_role("tab", name=re.compile("All checks")).count() == 1
+    assert page.get_by_role("radio", name="Last 3 months").count() == 1   # the chart's range toggle
     snap(page, "home")
     assert page.errors == []
     page.context.close()
@@ -122,12 +128,15 @@ def test_home_shows_todays_counts_and_recent_checks(live):
 def test_airlock_danger_verdict_explains_itself(live):
     page = session(live, "admin", "correct-horse-1")
     page.goto(f"{live['base']}/check/{live['ids']['bank']}")
-    page.wait_for_selector(".stamp.danger")
-    assert page.locator("#stamp").inner_text() == "DANGER"
-    why = page.locator("#reasons").inner_text()
-    assert "HDFC Bank" in why and "another website" in why
-    # Keep it locked is the main button, the risky choice is not
-    assert page.locator(".actions .btn.primary").first.inner_text().strip() == "Keep it locked"
+    page.get_by_text("Stop. This link is dangerous.").wait_for()
+    body = page.inner_text("main")
+    assert "HDFC Bank" in body and "another website" in body
+    assert "100" in page.locator("[data-slot=card-action]").first.inner_text()
+    # Keep it locked is the main action; opening is only a secondary "Open anyway…"
+    assert page.get_by_role("button", name="Keep it locked").is_visible()
+    assert page.get_by_role("button", name="Open safely").count() == 0
+    for name in ("Phishing", "Malware", "Tracking", "Tricks"):
+        assert page.get_by_role("progressbar", name=name).count() == 1
     snap(page, "airlock-danger")
     assert page.errors == []
     page.context.close()
@@ -136,9 +145,9 @@ def test_airlock_danger_verdict_explains_itself(live):
 def test_airlock_shows_hidden_ai_instructions(live):
     page = session(live, "admin", "correct-horse-1")
     page.goto(f"{live['base']}/check/{live['ids']['recipes']}")
-    page.wait_for_selector(".stamp:not(.pending)")
+    page.get_by_text(re.compile("This link (looks safe|is dangerous)|Be careful")).wait_for()
     page.get_by_role("tab", name="AI Guard").click()
-    assert "Ignore all previous instructions" in page.locator("[role=tabpanel]:visible").inner_text()
+    assert "Ignore all previous instructions" in page.get_by_role("tabpanel").inner_text()
     snap(page, "airlock-ai-guard")
     assert page.errors == []
     page.context.close()
@@ -147,22 +156,24 @@ def test_airlock_shows_hidden_ai_instructions(live):
 def test_open_anyway_on_danger_asks_for_confirmation(live):
     page = session(live, "admin", "correct-horse-1")
     page.goto(f"{live['base']}/check/{live['ids']['bank']}")
-    page.wait_for_selector(".stamp.danger")
+    page.get_by_text("Stop. This link is dangerous.").wait_for()
     page.get_by_role("button", name=re.compile("Open anyway")).click()
-    confirm = page.locator("#confirm")
-    confirm.wait_for(state="visible")
+    dialog = page.get_by_role("alertdialog")
+    dialog.wait_for()
+    assert "Open a dangerous link?" in dialog.inner_text()
     snap(page, "airlock-confirm")
     assert page.errors == []
     page.context.close()
 
 
-def test_inspect_from_home_goes_to_airlock(live):
+def test_inspect_a_link_from_the_sidebar_goes_to_airlock(live):
     page = session(live, "admin", "correct-horse-1")
-    page.fill("#url", "http://weather.example.top/today")
-    page.click("#inspect button[type=submit]")
+    page.get_by_role("button", name="Inspect a link").first.click()
+    page.get_by_role("dialog").wait_for()
+    page.get_by_label("Link to inspect").fill("http://weather.example.top/today")
+    page.get_by_role("button", name="Inspect", exact=True).click()
     page.wait_for_url(re.compile(r"/check/\d+$"))
-    page.wait_for_selector(".stamp:not(.pending)")
-    assert page.locator("#stamp").inner_text() in ("CLEAR", "CAUTION")
+    page.get_by_text(re.compile("This link looks safe|Be careful")).wait_for()
     assert page.errors == []
     page.context.close()
 
@@ -170,16 +181,16 @@ def test_inspect_from_home_goes_to_airlock(live):
 def test_guard_lab_flags_example_attack(live):
     page = session(live, "admin", "correct-horse-1")
     page.goto(live["base"] + "/guard")
-    page.click("text=Hidden attack")
-    page.wait_for_selector("#score:has-text('Score')")
-    assert "trying to give orders" in page.locator("#verdict").inner_text()
+    page.get_by_role("button", name="Hidden attack").click()
+    page.get_by_text("This text is trying to give orders to an AI.").wait_for()
+    assert page.get_by_role("progressbar", name="Injection score").count() == 1
     assert page.errors == []
     page.context.close()
 
 
 def test_every_screen_loads_without_console_errors(live):
     page = session(live, "admin", "correct-horse-1")
-    for path in ("/", "/history", "/lists", "/guard", "/settings"):
+    for path in ("/", "/history", "/lists", "/guard", "/settings", f"/check/{live['ids']['bank']}"):
         page.goto(live["base"] + path)
         page.wait_for_load_state("networkidle")
     assert page.errors == []
@@ -190,10 +201,11 @@ def test_every_screen_loads_without_console_errors(live):
 
 def test_analyst_cannot_see_or_open_settings(live):
     page = session(live, "analyst", "battery-staple-2")
-    assert page.locator("nav a[href='/settings']").count() == 0
+    page.get_by_text("Analyst", exact=True).wait_for()
+    assert page.locator("a[href='/settings']").count() == 0
     resp = page.goto(live["base"] + "/settings")
     assert resp.status == 403
-    assert "Not allowed" in page.content()
+    page.get_by_role("heading", name="Not allowed").first.wait_for()
     page.context.close()
 
 
@@ -205,6 +217,56 @@ def test_logged_out_user_is_sent_to_login(live):
     ctx.close()
 
 
+# ---------------------------------------------------------------- shadcn, fonts and security
+
+def test_ui_is_shadcn_dashboard_01():
+    assert (WEB / "components.json").exists()
+    pkg = (WEB / "package.json").read_text(encoding="utf-8")
+    assert '"radix-ui"' in pkg and '"tailwindcss"' in pkg and "astryx" not in pkg
+    app = (UI_SRC / "App.tsx").read_text(encoding="utf-8")
+    for part in ("<SidebarProvider", '<AppSidebar variant="inset"', "<SidebarInset>", "<SiteHeader"):
+        assert part in app, part
+    home = (UI_SRC / "pages" / "Home.tsx").read_text(encoding="utf-8")
+    for part in ("<SectionCards", "<ChartAreaInteractive", "<DataTable"):
+        assert part in home, part
+    for comp in ("sidebar", "card", "chart", "table", "tabs", "toggle-group", "dialog", "alert-dialog", "sonner"):
+        assert (UI_SRC / "components" / "ui" / f"{comp}.tsx").exists(), comp
+    assert not (ROOT / "ui").exists() and not (ROOT / "phishguard" / "static" / "app.css").exists()
+
+
+def test_fonts_are_our_own_and_served_by_phishguard(live):
+    page = session(live, "admin", "correct-horse-1")
+    page.get_by_text("Checked today").wait_for()
+    page.evaluate("document.fonts.ready.then(() => true)")
+    fonts = page.evaluate("[...document.fonts].filter(f => f.status === 'loaded').map(f => f.family.replaceAll('\"', ''))")
+    assert {"Space Grotesk Variable", "IBM Plex Sans Variable"} <= set(fonts), fonts
+    assert not [f for f in fonts if f.split(" Variable")[0] in ("Instrument Serif", "Inter", "Geist")], fonts
+    for family in ("IBM Plex Sans", "Space Grotesk", "JetBrains Mono"):
+        assert family in THEME_CSS
+    assert "geist" not in THEME_CSS.lower()
+    page.context.close()
+
+
+def test_strict_csp_kept_with_shadcn(live):
+    page = session(live, "admin", "correct-horse-1")
+    resp = page.goto(f"{live['base']}/check/{live['ids']['bank']}")
+    csp = resp.headers["content-security-policy"]
+    assert "unsafe-inline" not in csp and "unsafe-eval" not in csp
+    assert re.search(r"style-src 'self' 'nonce-[A-Za-z0-9_-]{20,}';", csp), csp
+    assert "script-src 'self';" in csp
+    again = page.request.get(f"{live['base']}/check/{live['ids']['bank']}").headers["content-security-policy"]
+    assert again != csp   # a fresh nonce for every page
+    page.get_by_text("Stop. This link is dangerous.").wait_for()
+    page.get_by_role("button", name=re.compile("Open anyway")).click()   # Radix dialog adds its nonce'd style
+    page.get_by_role("alertdialog").wait_for()
+    page.keyboard.press("Escape")
+    page.goto(live["base"] + "/settings")
+    page.get_by_role("combobox", name="Browser").click()                # Radix select viewport style
+    page.get_by_role("listbox").wait_for()
+    assert page.errors == []
+    page.context.close()
+
+
 # ---------------------------------------------------------------- accessibility and layout
 
 def test_images_have_alt_text_and_inputs_have_labels(live):
@@ -214,7 +276,8 @@ def test_images_have_alt_text_and_inputs_have_labels(live):
         page.wait_for_load_state("networkidle")
         missing_alt = page.evaluate("[...document.images].filter(i => !i.hasAttribute('alt')).length")
         unlabelled = page.evaluate("""[...document.querySelectorAll('input:not([type=hidden]), textarea, select')]
-            .filter(e => !(e.labels && e.labels.length) && !e.getAttribute('aria-label')).map(e => e.id || e.name)""")
+            .filter(e => !(e.labels && e.labels.length) && !e.getAttribute('aria-label')
+                         && !e.getAttribute('aria-labelledby')).map(e => e.id || e.name)""")
         assert missing_alt == 0, path
         assert unlabelled == [], (path, unlabelled)
     page.context.close()
@@ -233,33 +296,46 @@ def test_no_sideways_scrolling(live, width, height):
 
 def test_dark_mode_follows_windows_setting(live):
     page = session(live, "admin", "correct-horse-1", scheme="dark")
-    bg = page.evaluate("getComputedStyle(document.body).backgroundColor")
-    assert bg == "rgb(21, 22, 26)"
+    page.get_by_text("Checked today").wait_for()
+    lum = page.evaluate("""(() => {
+        const cv = document.createElement('canvas'); cv.width = cv.height = 1; const cx = cv.getContext('2d');
+        cx.fillStyle = getComputedStyle(document.querySelector('main')).backgroundColor; cx.fillRect(0, 0, 1, 1);
+        const c = cx.getImageData(0, 0, 1, 1).data;
+        return (c[0] * 299 + c[1] * 587 + c[2] * 114) / 1000; })()""")
+    assert lum < 80, lum
     snap(page, "home-dark")
     page.context.close()
 
 
-def _tokens(block):
-    return dict(re.findall(r"--([a-z0-9-]+):\s*(#[0-9a-f]{6})", block))
+CONTRAST_JS = """(() => {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 1;
+  const cx = cv.getContext('2d', {willReadFrequently: true});
+  const parse = s => { cx.clearRect(0, 0, 1, 1); cx.fillStyle = '#fff'; cx.fillRect(0, 0, 1, 1);
+                       cx.fillStyle = s; cx.fillRect(0, 0, 1, 1); return [...cx.getImageData(0, 0, 1, 1).data].slice(0, 3); };
+  const alpha = s => { cx.clearRect(0, 0, 1, 1); cx.fillStyle = s; cx.fillRect(0, 0, 1, 1); return cx.getImageData(0, 0, 1, 1).data[3]; };
+  const lum = ([r, g, b]) => [r, g, b].map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; })
+                               .reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0);
+  const bg = el => { for (; el; el = el.parentElement) { const c = getComputedStyle(el).backgroundColor;
+                       if (alpha(c) > 200) return parse(c); }
+                     return parse(getComputedStyle(document.body).backgroundColor); };
+  const out = [];
+  for (const el of document.querySelectorAll('main h1, main h2, main h3, main p, main td, main a, main label, main li, main [data-slot=card-title], main [data-slot=card-description], main [data-slot=badge]')) {
+    if (!el.textContent.trim() || !el.offsetParent) continue;
+    const a = lum(parse(getComputedStyle(el).color)), b = lum(bg(el));
+    const ratio = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+    if (ratio < 4.5) out.push([el.tagName, el.textContent.trim().slice(0, 40), ratio.toFixed(2)]);
+  }
+  return out;
+})()"""
 
 
-def _lum(hexc):
-    rgb = [int(hexc[i:i + 2], 16) / 255 for i in (1, 3, 5)]
-    lin = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in rgb]
-    return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
-
-
-def contrast(a, b):
-    la, lb = sorted((_lum(a), _lum(b)), reverse=True)
-    return (la + 0.05) / (lb + 0.05)
-
-
-@pytest.mark.parametrize("theme", ["light", "dark"])
-def test_text_colours_meet_wcag_aa(theme):
-    light = _tokens(CSS.split(":root {", 1)[1].split("}", 1)[0])
-    dark = _tokens(CSS.split(':root[data-theme="dark"] {', 1)[1].split("}", 1)[0])
-    t = {**light, **dark} if theme == "dark" else light
-    pairs = [("ink", "paper"), ("ink", "card"), ("ink-2", "card"), ("muted", "paper"), ("muted", "card"),
-             ("clear", "clear-bg"), ("caution", "caution-bg"), ("danger", "danger-bg"), ("danger", "card")]
-    low = {f"{f} on {b}": round(contrast(t[f], t[b]), 2) for f, b in pairs if contrast(t[f], t[b]) < 4.5}
-    assert low == {}, low
+@pytest.mark.parametrize("scheme", ["light", "dark"])
+def test_text_contrast_meets_wcag_aa(live, scheme):
+    page = session(live, "admin", "correct-horse-1", scheme=scheme)
+    for path in ("/", "/history", f"/check/{live['ids']['bank']}"):
+        page.goto(live["base"] + path)
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(300)
+        low = page.evaluate(CONTRAST_JS)
+        assert low == [], (scheme, path, low)
+    page.context.close()

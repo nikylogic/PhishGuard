@@ -187,7 +187,7 @@ def stats():
     one = lambda sql, *a: con.execute(sql, a).fetchone()[0]  # noqa: E731
     days = [dict(r) for r in con.execute(
         "SELECT date(created_at) AS day, SUM(level='clear') AS clear, SUM(level='caution') AS caution, "
-        "SUM(level='danger') AS danger FROM scans WHERE created_at >= datetime('now', '-6 days') "
+        "SUM(level='danger') AS danger FROM scans WHERE created_at >= datetime('now', '-89 days') "
         "GROUP BY day ORDER BY day")]
     top = [dict(r) for r in con.execute(
         "SELECT domain, COUNT(*) AS n FROM scans WHERE level = 'danger' GROUP BY domain ORDER BY n DESC LIMIT 5")]

@@ -7,7 +7,7 @@ point it at a temporary folder.
 import secrets
 from pathlib import Path
 
-from flask import Flask, jsonify, request
+from flask import Flask, g, jsonify, request
 from werkzeug.exceptions import HTTPException
 
 from . import db
@@ -92,7 +92,13 @@ def create_app(overrides: dict | None = None) -> Flask:
 
     @app.after_request
     def security_headers(resp):
-        resp.headers["Content-Security-Policy"] = CSP
+        csp = CSP
+        nonce = g.get("csp_nonce")
+        if nonce:
+            # Radix dialogs and menus add one small <style> tag (scroll lock); only tags carrying
+            # this page's one-time nonce may do that. Still no 'unsafe-inline'.
+            csp = csp.replace("style-src 'self'", f"style-src 'self' 'nonce-{nonce}'")
+        resp.headers["Content-Security-Policy"] = csp
         resp.headers["X-Content-Type-Options"] = "nosniff"
         resp.headers["X-Frame-Options"] = "DENY"
         resp.headers["Referrer-Policy"] = "same-origin"

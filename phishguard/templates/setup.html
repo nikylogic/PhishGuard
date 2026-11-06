@@ -1,9 +1,0 @@
-{% extends "login.html" %}
-{% block heading %}Create the first admin{% endblock %}
-{% block fields %}
-<p class="muted">This only appears once, the first time PhishGuard starts.</p>
-<label class="field" for="username">Username <input class="input" id="username" name="username" required autofocus autocomplete="username"></label>
-<label class="field" for="password">Password (8+ characters) <input class="input" id="password" name="password" type="password" required autocomplete="new-password"></label>
-<label class="field" for="password2">Type it again <input class="input" id="password2" name="password2" type="password" required autocomplete="new-password"></label>
-<button class="btn primary big" type="submit">Create and continue</button>
-{% endblock %}
