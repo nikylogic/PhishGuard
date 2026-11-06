@@ -1,0 +1,3 @@
+epoch 1: mean loss 0.2627 (354 s so far)
+epoch 2: mean loss 0.0778 (712 s so far)
+epoch 3: mean loss 0.0274 (1075 s so far)

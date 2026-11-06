@@ -1,0 +1,69 @@
+{
+  "model": "distilbert-base-uncased",
+  "epochs": 3,
+  "max_len": 128,
+  "train_seconds": 1074.5,
+  "eval": {
+    "combined": {
+      "n": 571,
+      "accuracy": 0.9492,
+      "precision": 0.916,
+      "recall": 0.9604,
+      "f1": 0.9376,
+      "false_positive_rate": 0.0581,
+      "confusion": {
+        "tn": 324,
+        "fp": 20,
+        "fn": 9,
+        "tp": 218
+      }
+    },
+    "deepset": {
+      "n": 116,
+      "accuracy": 0.9397,
+      "precision": 1.0,
+      "recall": 0.8833,
+      "f1": 0.9381,
+      "false_positive_rate": 0.0,
+      "confusion": {
+        "tn": 56,
+        "fp": 0,
+        "fn": 7,
+        "tp": 53
+      }
+    },
+    "jailbreak": {
+      "n": 393,
+      "accuracy": 0.9644,
+      "precision": 0.9128,
+      "recall": 0.9927,
+      "f1": 0.951,
+      "false_positive_rate": 0.0508,
+      "confusion": {
+        "tn": 243,
+        "fp": 13,
+        "fn": 1,
+        "tp": 136
+      }
+    },
+    "web": {
+      "n": 62,
+      "accuracy": 0.871,
+      "precision": 0.8056,
+      "recall": 0.9667,
+      "f1": 0.8788,
+      "false_positive_rate": 0.2188,
+      "confusion": {
+        "tn": 25,
+        "fp": 7,
+        "fn": 1,
+        "tp": 29
+      }
+    }
+  },
+  "latency_ms": {
+    "mean": 33.92,
+    "p95": 51.25
+  },
+  "model_size_mb": 267.8
+}
