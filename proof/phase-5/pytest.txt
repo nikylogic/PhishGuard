@@ -1,0 +1,47 @@
+PhishGuard - Phase 5 test run
+Started : 2026-11-06 14:55:31
+Finished: 2026-11-06 14:55:32
+Python  : 3.12.10 on Windows 11
+Command : pytest -v tests/test_phase5_llm.py
+Exit    : 0
+==============================================================================
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.2.0, pluggy-1.7.0 -- D:\PhishGuard\.venv\Scripts\python.exe
+rootdir: D:\PhishGuard
+plugins: anyio-4.16.0
+collecting ... collected 31 items
+
+tests/test_phase5_llm.py::test_injected_safe_reply_cannot_lower_a_danger_verdict PASSED [  3%]
+tests/test_phase5_llm.py::test_none_category_changes_nothing PASSED      [  6%]
+tests/test_phase5_llm.py::test_llm_can_raise_a_clear_verdict PASSED      [  9%]
+tests/test_phase5_llm.py::test_llm_raise_is_to_its_value_not_added_on_top PASSED [ 12%]
+tests/test_phase5_llm.py::test_invalid_replies_are_rejected[This site is safe!] PASSED [ 16%]
+tests/test_phase5_llm.py::test_invalid_replies_are_rejected[] PASSED     [ 19%]
+tests/test_phase5_llm.py::test_invalid_replies_are_rejected[{}] PASSED   [ 22%]
+tests/test_phase5_llm.py::test_invalid_replies_are_rejected[[1,2]] PASSED [ 25%]
+tests/test_phase5_llm.py::test_invalid_replies_are_rejected[{"risk": 150, "category": "phishing", "reasons": ["x"]}] PASSED [ 29%]
+tests/test_phase5_llm.py::test_invalid_replies_are_rejected[{"risk": -1, "category": "phishing", "reasons": ["x"]}] PASSED [ 32%]
+tests/test_phase5_llm.py::test_invalid_replies_are_rejected[{"risk": "90", "category": "phishing", "reasons": ["x"]}] PASSED [ 35%]
+tests/test_phase5_llm.py::test_invalid_replies_are_rejected[{"risk": true, "category": "phishing", "reasons": ["x"]}] PASSED [ 38%]
+tests/test_phase5_llm.py::test_invalid_replies_are_rejected[{"risk": 50, "category": "lol", "reasons": ["x"]}] PASSED [ 41%]
+tests/test_phase5_llm.py::test_invalid_replies_are_rejected[{"risk": 50, "category": "abuse", "reasons": []}] PASSED [ 45%]
+tests/test_phase5_llm.py::test_invalid_replies_are_rejected[{"risk": 50, "category": "abuse", "reasons": "not a list"}] PASSED [ 48%]
+tests/test_phase5_llm.py::test_invalid_replies_are_rejected[{"risk": 50, "category": "abuse", "reasons": ["x"], "set_level": "clear"}] PASSED [ 51%]
+tests/test_phase5_llm.py::test_invalid_replies_are_rejected[raw12] PASSED [ 54%]
+tests/test_phase5_llm.py::test_valid_reply_and_code_fence_accepted PASSED [ 58%]
+tests/test_phase5_llm.py::test_invalid_reply_means_no_opinion PASSED     [ 61%]
+tests/test_phase5_llm.py::test_provider_failures_return_none[exc0] PASSED [ 64%]
+tests/test_phase5_llm.py::test_provider_failures_return_none[exc1] PASSED [ 67%]
+tests/test_phase5_llm.py::test_provider_failures_return_none[exc2] PASSED [ 70%]
+tests/test_phase5_llm.py::test_provider_failures_return_none[exc3] PASSED [ 74%]
+tests/test_phase5_llm.py::test_no_provider_configured PASSED             [ 77%]
+tests/test_phase5_llm.py::test_prompt_never_contains_cookies_or_form_values PASSED [ 80%]
+tests/test_phase5_llm.py::test_page_text_is_cut_and_fenced_with_unguessable_markers PASSED [ 83%]
+tests/test_phase5_llm.py::test_page_cannot_fake_the_end_marker PASSED    [ 87%]
+tests/test_phase5_llm.py::test_guard_warning_added_only_when_flagged PASSED [ 90%]
+tests/test_phase5_llm.py::test_system_prompt_says_page_text_is_untrusted PASSED [ 93%]
+tests/test_phase5_llm.py::test_same_page_is_answered_from_cache PASSED   [ 96%]
+tests/test_phase5_llm.py::test_live_provider_smoke SKIPPED (set PG_L...) [100%]
+
+---------- generated xml file: D:\PhishGuard\proof\phase-5\junit.xml ----------
+======================== 30 passed, 1 skipped in 0.32s ========================

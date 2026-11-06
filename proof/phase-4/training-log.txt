@@ -1,0 +1,5 @@
+train rows: 2191 (injections 749)
+test rows: 571 (injections 227)
+test rows removed because the same text was in training: 6
+cross-validation F1 by C: C=0.5: 0.911, C=2.0: 0.937, C=8.0: 0.944, C=32.0: 0.942
+chosen C = 8.0 (training took 18.4 s)
