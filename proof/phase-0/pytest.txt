@@ -1,0 +1,39 @@
+PhishGuard - Phase 0 test run
+Started : 2026-11-06 14:22:01
+Finished: 2026-11-06 14:22:04
+Python  : 3.12.10 on Windows 11
+Command : pytest -v tests/test_phase0_foundation.py
+Exit    : 0
+==============================================================================
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.2.0, pluggy-1.7.0 -- D:\PhishGuard\.venv\Scripts\python.exe
+rootdir: D:\PhishGuard
+collecting ... collected 24 items
+
+tests/test_phase0_foundation.py::test_health_returns_ok PASSED           [  4%]
+tests/test_phase0_foundation.py::test_table_has_expected_columns[audit_log] PASSED [  8%]
+tests/test_phase0_foundation.py::test_table_has_expected_columns[domain_lists] PASSED [ 12%]
+tests/test_phase0_foundation.py::test_table_has_expected_columns[downloads] PASSED [ 16%]
+tests/test_phase0_foundation.py::test_table_has_expected_columns[findings] PASSED [ 20%]
+tests/test_phase0_foundation.py::test_table_has_expected_columns[guard_events] PASSED [ 25%]
+tests/test_phase0_foundation.py::test_table_has_expected_columns[intel_lists] PASSED [ 29%]
+tests/test_phase0_foundation.py::test_table_has_expected_columns[privacy] PASSED [ 33%]
+tests/test_phase0_foundation.py::test_table_has_expected_columns[scans] PASSED [ 37%]
+tests/test_phase0_foundation.py::test_table_has_expected_columns[settings] PASSED [ 41%]
+tests/test_phase0_foundation.py::test_table_has_expected_columns[users] PASSED [ 45%]
+tests/test_phase0_foundation.py::test_foreign_keys_and_wal_are_on PASSED [ 50%]
+tests/test_phase0_foundation.py::test_check_constraints_reject_bad_values[INSERT INTO users(username, pw_hash, role) VALUES ('x', 'h', 'superuser')] PASSED [ 54%]
+tests/test_phase0_foundation.py::test_check_constraints_reject_bad_values[INSERT INTO scans(url, domain, source) VALUES ('u', 'd', 'email')] PASSED [ 58%]
+tests/test_phase0_foundation.py::test_check_constraints_reject_bad_values[INSERT INTO scans(url, domain, source, score) VALUES ('u', 'd', 'manual', 150)] PASSED [ 62%]
+tests/test_phase0_foundation.py::test_check_constraints_reject_bad_values[INSERT INTO scans(url, domain, source, level) VALUES ('u', 'd', 'manual', 'evil')] PASSED [ 66%]
+tests/test_phase0_foundation.py::test_check_constraints_reject_bad_values[INSERT INTO domain_lists(domain, kind) VALUES ('a.com', 'maybe')] PASSED [ 70%]
+tests/test_phase0_foundation.py::test_check_constraints_reject_bad_values[INSERT INTO intel_lists(kind, value) VALUES ('rumour', 'x')] PASSED [ 75%]
+tests/test_phase0_foundation.py::test_findings_need_a_real_scan PASSED   [ 79%]
+tests/test_phase0_foundation.py::test_deleting_a_scan_deletes_its_findings PASSED [ 83%]
+tests/test_phase0_foundation.py::test_security_headers_present PASSED    [ 87%]
+tests/test_phase0_foundation.py::test_secrets_are_created_once_and_reused PASSED [ 91%]
+tests/test_phase0_foundation.py::test_session_cookie_is_locked_down PASSED [ 95%]
+tests/test_phase0_foundation.py::test_real_server_listens_on_loopback_only PASSED [100%]
+
+---------- generated xml file: D:\PhishGuard\proof\phase-0\junit.xml ----------
+============================= 24 passed in 2.93s ==============================
