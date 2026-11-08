@@ -1,0 +1,45 @@
+<!--page {
+  "path": "docs/index.html", "kind": "doc", "nav": "Getting started", "order": 1,
+  "title": "Install PhishGuard on Windows · Getting started",
+  "h1": "Getting started",
+  "lead": "Install PhishGuard, make it your default browser, and every link you click in another app is checked first. It takes about two minutes and needs no admin rights.",
+  "description": "How to install PhishGuard on Windows 10 or 11, make it your default browser and choose the browser safe links open in. Free, no admin rights needed."
+} -->
+<h2>What you need</h2>
+<ul>
+  <li>Windows 10 or Windows 11.</li>
+  <li>Google Chrome or Microsoft Edge installed. Windows 11 already includes Edge. PhishGuard uses it, with a throwaway profile, as its hidden sandbox browser.</li>
+  <li>About 280 MB of disk space.</li>
+</ul>
+
+<h2>Install</h2>
+<ol class="numbered">
+  <li><b>Download the installer.</b> Get <code>PhishGuard-Setup-{{version}}.exe</code> from the <a href="https://github.com/nikylogic/PhishGuard/releases/latest" data-dl>latest release</a>.</li>
+  <li><b>Run it.</b> It installs for your Windows account only, so it does not ask for admin rights.</li>
+  <li><b>If Windows SmartScreen warns you</b> that the publisher is unknown, choose <em>More info</em>, then <em>Run anyway</em>. The installer is not code-signed yet, because a Windows code-signing certificate costs money every year. You can check the file against the <code>.sha256</code> fingerprint published next to it, or build it yourself from the source code.</li>
+</ol>
+
+<h2>Make PhishGuard your default browser</h2>
+<p>This is what puts PhishGuard between your apps and your browser. Links you click inside your browser stay there; links from WhatsApp, Discord, Outlook, PDFs and other apps come to PhishGuard first.</p>
+<ol class="numbered">
+  <li>Open PhishGuard and go to <b>Settings → General</b>.</li>
+  <li>Press <b>Make PhishGuard my default browser</b>. Windows opens its own Settings on PhishGuard's page.</li>
+  <li>Press <b>Set default</b>. Windows only lets you change this yourself, which is a good thing.</li>
+</ol>
+
+<h2>Choose your real browser</h2>
+<p>In <b>Settings → General</b>, pick the browser safe links should open in: Chrome, Edge, Brave or Firefox. PhishGuard starts that browser directly, so links never loop back into PhishGuard.</p>
+
+<h2>Everyday use</h2>
+<ul>
+  <li><b>It starts with Windows</b>, quietly, so the first link you click is already checked. You can turn this off in Settings.</li>
+  <li><b>Its shield icon sits next to the clock.</b> Click it to open PhishGuard. Right-click it to check a link you copied, switch Start with Windows on or off, or quit.</li>
+  <li><b>Sites you trust open straight away</b>, in about a quarter of a second. Everything else gets the full check, usually in two to three seconds.</li>
+  <li><b>It updates itself.</b> See <a href="{{root}}docs/updates.html">Updates</a>.</li>
+</ul>
+
+<h2>Several people on one PC</h2>
+<p>On first start, choose <em>Several people</em>. Each person signs in with their own account, as an admin or an analyst, and the two roles get different rights. Every change is written to an audit log.</p>
+
+<h2>Uninstall</h2>
+<p>Use <b>Settings → Apps → Installed apps → PhishGuard → Uninstall</b> in Windows. The uninstaller asks whether to delete your history and settings too (<code>%LOCALAPPDATA%\PhishGuard</code>); the answer defaults to keeping them. Then pick a new default browser in Windows Settings.</p>

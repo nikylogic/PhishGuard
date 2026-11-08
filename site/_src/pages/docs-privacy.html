@@ -1,0 +1,27 @@
+<!--page {
+  "path": "docs/privacy.html", "kind": "doc", "nav": "Privacy", "order": 5,
+  "title": "PhishGuard privacy: what stays on your PC · Docs",
+  "h1": "Privacy",
+  "lead": "PhishGuard has no account, no cloud and no analytics. Here is every case where it talks to the internet, and exactly what it sends.",
+  "description": "What PhishGuard stores and sends: everything stays on your PC, lists are checked locally, only domain names go to registries. AI is off by default."
+} -->
+<h2>What stays on your PC</h2>
+<p>Verdicts, screenshots, history and settings stay in <code>%LOCALAPPDATA%\PhishGuard</code>, inside your own Windows user folder. History is deleted after 90 days by default; you can change that in <b>Settings → Privacy</b>.</p>
+
+<h2>Every time PhishGuard goes online</h2>
+<div class="table"><table>
+  <thead><tr><th>What</th><th>Sent to</th><th>What is sent</th></tr></thead>
+  <tbody>
+    <tr><td>Opening a link in the sandbox</td><td>The website itself</td><td>What any browser sends, from a throwaway profile with no cookies. Optionally through Tor, Cloudflare WARP or your own proxy (<b>Hide my IP</b>).</td></tr>
+    <tr><td>Phishing lists</td><td>phishunt.io, OpenPhish, GitHub</td><td>A plain download every 6 hours. Your links are never sent.</td></tr>
+    <tr><td>Website age</td><td>The domain's official registry (RDAP), crt.sh</td><td>Only the domain name, never the full link. Popular sites and brands' own domains are skipped.</td></tr>
+    <tr><td>Update check</td><td>GitHub</td><td>A request for the latest release, twice a day. Nothing about you or your links.</td></tr>
+    <tr><td>AI second opinion <em>(off by default)</em></td><td>The provider you choose: Gemini, Groq, or Ollama on your own PC</td><td>The link, the page title, PhishGuard's findings and up to 4,000 characters of the page's visible text. Never cookies, form values or screenshots.</td></tr>
+  </tbody>
+</table></div>
+
+<h2>The AI second opinion</h2>
+<p>It is off until you turn it on. Before the page text reaches the model, AI Guard warns it about any hidden instructions. The AI can only raise the risk, never lower it, so a page that talks its way past the model gains nothing.</p>
+
+<h2>This website</h2>
+<p>This site has no cookies, no analytics and no third-party scripts; its fonts are served from the site itself. The link checker runs in your browser. See <a href="{{root}}docs/link-checker.html#what-it-sends-and-where">what it sends, and where</a>.</p>

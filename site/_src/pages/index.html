@@ -1,0 +1,134 @@
+<!--page {
+  "path": "index.html", "kind": "home",
+  "title": "Is this link safe? Free phishing link checker · PhishGuard",
+  "og_title": "Is this link safe? Free phishing link checker",
+  "description": "Paste a link to see if it is a fake: look-alike bank addresses, reported phishing and new sites. Free, no sign-up, and the full link never leaves your browser.",
+  "ld": [
+    {"@context": "https://schema.org", "@type": ["SoftwareApplication", "WebApplication"], "name": "PhishGuard",
+     "url": "https://nikylogic.github.io/PhishGuard/", "applicationCategory": "SecurityApplication",
+     "operatingSystem": "Windows 10, Windows 11; any modern browser for the link checker",
+     "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+     "downloadUrl": "https://github.com/nikylogic/PhishGuard/releases/latest",
+     "description": "A free phishing link checker, and a Windows app that opens every link from your apps in a hidden browser before it reaches you.",
+     "author": {"@type": "Person", "name": "Nikhil P"}},
+    {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+      {"@type": "Question", "name": "How do I check if a link is safe?",
+       "acceptedAnswer": {"@type": "Answer", "text": "Paste it into the PhishGuard link checker. It checks the address against the rules PhishGuard's Windows app uses, about 380,000 reported phishing domains and the website's registration date, then tells you what it found in plain words."}},
+      {"@type": "Question", "name": "Is my link sent to a server?",
+       "acceptedAnswer": {"@type": "Answer", "text": "No. The check runs in your browser. To look the link up in the phishing lists, your browser downloads one small file chosen by a hash of the address. Only the domain name is sent to its official registry to read the website's age."}},
+      {"@type": "Question", "name": "What does the Windows app do that the website cannot?",
+       "acceptedAnswer": {"@type": "Answer", "text": "It opens the page itself in a hidden, throwaway browser on your PC before you see it, so it also catches fake login forms, malware downloads, fake virus alerts and other tricks that only show up on the page."}},
+      {"@type": "Question", "name": "Is PhishGuard free?",
+       "acceptedAnswer": {"@type": "Answer", "text": "Yes, for personal use and for non-profit organisations such as schools and charities. The full source code is on GitHub."}},
+      {"@type": "Question", "name": "Does it replace my antivirus?",
+       "acceptedAnswer": {"@type": "Answer", "text": "No, keep both. Antivirus protects the files on your PC; PhishGuard protects the moment you click a link."}}
+    ]}
+  ]
+} -->
+<section class="hero">
+  <p class="kicker"><span class="dot"></span>Free link checker · no sign-up</p>
+  <h1>Look before<br>you <em>click.</em></h1>
+
+  <form class="bar" id="check" role="search" autocomplete="off">
+    <label class="sr" for="link">Link to check</label>
+    <input id="link" name="link" type="text" inputmode="url" spellcheck="false" autocapitalize="off"
+           placeholder="Paste a link to check it" enterkeyhint="go">
+    <button type="submit" id="check-btn">Check link</button>
+  </form>
+  <p class="try">Try
+    <button type="button" data-try="hdfc-login-kyc.top/verify">hdfc-login-kyc.top</button>
+    <button type="button" data-try="http://paypa1.com/signin">paypa1.com</button>
+    <button type="button" data-try="https://en.wikipedia.org/wiki/Tea">wikipedia.org</button>
+  </p>
+  <p class="assure">Checked in your browser. The full link is never sent anywhere.
+    <a href="{{root}}docs/link-checker.html">How it works</a></p>
+
+  <div class="hero-dl">
+    <a class="go" href="https://github.com/nikylogic/PhishGuard/releases/latest" data-dl>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5.5 10.5 4.5v7H3zm0 13 7.5 1v-7H3zm8.5 1.2L21 21v-8.5h-9.5zm0-15.4v7.2H21V3z"/></svg>
+      Download for Windows</a>
+    <span class="meta"><span data-version>Free</span> · checks every link before it opens</span>
+  </div>
+
+  <section class="history" id="history" hidden aria-labelledby="history-title">
+    <div class="history-head">
+      <h2 id="history-title">Your checks</h2>
+      <span class="meta">Saved only in this browser</span>
+      <button type="button" class="history-clear" id="history-clear">Clear</button>
+    </div>
+    <ol class="history-list" id="history-list"></ol>
+  </section>
+</section>
+
+<dialog class="report-dialog" id="report-dialog" aria-labelledby="rep-title">
+  <div class="dialog-bar">
+    <span class="meta">Link report</span>
+    <button type="button" class="dialog-copy" id="report-copy">Copy link to this report</button>
+    <button type="button" class="dialog-close" id="report-close" autofocus aria-label="Close the report">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div id="report" aria-live="polite"></div>
+</dialog>
+
+<section class="numbers" aria-label="Measured results">
+  <div><b>0.23<small>s</small></b><span>to open a site you trust</span></div>
+  <div><b>2.4<small>s</small></b><span>for a full sandbox check</span></div>
+  <div><b>87<small>%</small></b><span>of brand-new phishing warned in testing</span></div>
+  <div><b>63<small>/63</small></b><span>attacks on PhishGuard itself stopped</span></div>
+  <a class="numbers-link" href="{{root}}docs/results.html">How we measured →</a>
+</section>
+
+<section class="app">
+  <div class="app-copy">
+    <p class="eyebrow">The Windows app</p>
+    <h2>Every link from your apps opens in a <em>hidden browser</em> first.</h2>
+    <ol class="steps">
+      <li><b>You click a link</b> in WhatsApp, Outlook, Discord or a PDF.</li>
+      <li><b>PhishGuard opens it</b> in a throwaway browser with no cookies, passwords or files.</li>
+      <li><b>You see the verdict</b> and every reason. Nothing opens until you say so.</li>
+    </ol>
+    <div class="cta-row">
+      <a class="go" href="https://github.com/nikylogic/PhishGuard/releases/latest" data-dl>Download for Windows</a>
+      <span class="meta"><span data-version>Free</span> · Windows 10 &amp; 11 · no admin rights</span>
+    </div>
+  </div>
+  <figure class="shot">
+    <img src="{{root}}images/airlock-danger.png" width="2049" height="1152" loading="lazy"
+         alt="PhishGuard stopping a fake HDFC Bank login page and listing why">
+    <figcaption>A fake bank login, stopped in the sandbox. Every reason is written out.</figcaption>
+  </figure>
+</section>
+
+<section class="kills">
+  <p class="strike">Fake logins.</p>
+  <p class="strike">Disguised files.</p>
+  <p class="strike">Scam pop-ups.</p>
+  <p class="after">Stopped before they load. <a href="{{root}}docs/detection.html">See every check</a></p>
+</section>
+
+<section class="local">
+  <h2>Nothing leaves<br>your <em>PC.</em></h2>
+  <ul class="ticks">
+    <li>No account, no cloud. History stays in your Windows user folder.</li>
+    <li>Phishing lists are downloaded and checked on your PC.</li>
+    <li>Updates install only with PhishGuard's digital signature.</li>
+  </ul>
+  <a class="more" href="{{root}}docs/privacy.html">Read the privacy details →</a>
+</section>
+
+<section class="faq">
+  <h2>Questions</h2>
+  <div class="qa">
+    <details><summary>How do I check if a link is safe?</summary>
+      <p>Paste it in the box above. It checks the address with the same rules as the Windows app, looks it up in about 380,000 reported phishing domains, and asks the registry how old the website is.</p></details>
+    <details><summary>Is my link sent to a server?</summary>
+      <p>No. The check runs in your browser. Only the domain name goes to its official registry, to read the website's age.</p></details>
+    <details><summary>What does the Windows app do that the website cannot?</summary>
+      <p>It opens the page itself in a hidden browser first, so it also catches fake login forms, malware downloads and fake virus alerts.</p></details>
+    <details><summary>Is PhishGuard free?</summary>
+      <p>Yes, for personal use and for non-profits. The full source code is on GitHub.</p></details>
+    <details><summary>Does it replace my antivirus?</summary>
+      <p>No, keep both. Antivirus guards your files; PhishGuard guards the click.</p></details>
+  </div>
+</section>

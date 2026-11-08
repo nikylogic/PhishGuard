@@ -1,0 +1,66 @@
+<!--page {
+  "path": "docs/how-it-works.html", "kind": "doc", "nav": "How it works", "order": 2,
+  "title": "How PhishGuard works: the link airlock · Docs",
+  "h1": "How it works",
+  "lead": "PhishGuard sits between the click and the browser. Unknown links load in a hidden, throwaway browser on your PC, and you see what the page really is before it can reach you.",
+  "description": "How PhishGuard's link airlock works: a hidden throwaway browser, a network gatekeeper, quarantined downloads and a verdict that explains itself."
+} -->
+<figure class="flow-fig" aria-label="A link goes from your app to PhishGuard. Trusted sites go straight to your browser. Everything else opens in the sandbox, gets a verdict, and you decide.">
+  <div class="flow">
+    <span class="node">Link in an app</span><i></i>
+    <span class="node ink">PhishGuard</span><i></i>
+    <span class="node">Hidden sandbox</span><i></i>
+    <span class="node">Verdict + reasons</span><i></i>
+    <span class="node ink">You decide</span>
+  </div>
+  <figcaption>Sites on your trusted list skip the sandbox and open in your browser at once.</figcaption>
+</figure>
+
+<h2>1. PhishGuard receives the link</h2>
+<p>PhishGuard registers with Windows as a browser, for your account only. Once you make it the default, Windows hands it every link you click in another app. It refuses anything that is not a plain web link, such as <code>javascript:</code>, <code>file:</code> or <code>ms-msdt:</code> links, and links hiding invisible characters.</p>
+<p>It reads a link exactly the way Chrome and Edge do, including odd forms such as backslashes or a number in place of an IP address, so a trick that fools a simple parser cannot slip past the check.</p>
+
+<h2>2. Trusted sites open at once</h2>
+<p>If the website is on your trusted list, PhishGuard starts your real browser with it directly. Measured on a real PC, that takes 0.23 seconds from click to browser.</p>
+
+<h2>3. Everything else opens in the sandbox</h2>
+<p>The sandbox is a separate, hidden copy of Chrome or Edge:</p>
+<ul>
+  <li><b>A throwaway profile:</b> no cookies, saved passwords, history or files from your real browser.</li>
+  <li><b>A network gatekeeper</b> that refuses any connection to your router, your PC or other private addresses, including web addresses that secretly point back to them.</li>
+  <li><b>Downloads go to quarantine</b> and are never run.</li>
+  <li><b>A 20-second limit.</b> A real site usually takes about 2 seconds.</li>
+</ul>
+<p>While the page loads, PhishGuard records where it redirects, what forms it shows and where they send your data, which scripts and trackers run, what permissions it asks for, what it tries to download, and a screenshot.</p>
+
+<h2>4. The checks</h2>
+<p>Five independent layers look at what was recorded. Any one can raise the alarm:</p>
+<ol class="numbered">
+  <li><b>Public phishing lists</b>: about 380,000 reported phishing domains, downloaded and checked on your PC.</li>
+  <li><b>Website age</b>: from the domain's official registry (RDAP) and certificate history. Many scam sites are only days old.</li>
+  <li><b>Identity</b>: which brand does the page claim to be, and is it on that brand's real website?</li>
+  <li><b>What the page asks for</b>: a password, OTP, card or ID on free hosting or on a weeks-old domain.</li>
+  <li><b>Address and behaviour rules</b>: look-alike names, fake virus alerts, keyboard traps, hidden redirects, crypto-miners and hidden text aimed at AI assistants.</li>
+</ol>
+<p>Every rule and its weight is listed in <a href="{{root}}docs/detection.html">What it detects</a>.</p>
+
+<h2>5. The verdict</h2>
+<p>Each finding adds points to one of four groups: phishing, malware, tracking and tricks. The highest group decides the verdict:</p>
+<div class="verdicts">
+  <div class="v danger"><b>Danger</b><span>50 points or more</span></div>
+  <div class="v caution"><b>Caution</b><span>20 to 49</span></div>
+  <div class="v clear"><b>Clear</b><span>under 20</span></div>
+</div>
+<p>Two rules keep the verdict fair. Ordinary tracking is shown in the privacy report but never makes a link look dangerous, because nearly every big site tracks; IP-logger links are the exception. And weak signals that honest sites also have, such as a long link or a new certificate, only add to a warning something stronger has already started.</p>
+
+<h2>6. You decide</h2>
+<p>The Airlock window shows the verdict, the screenshot and every reason in plain words. Nothing opens until you choose:</p>
+<ul>
+  <li><b>Open safely</b>: open the link in your real browser. A Danger link asks you to confirm.</li>
+  <li><b>Open clean link</b>: the same link with tracking tags such as <code>utm_source</code> and <code>fbclid</code> removed.</li>
+  <li><b>Keep it locked</b>: do nothing.</li>
+  <li><b>Block this site</b>: never open it again.</li>
+</ul>
+
+<h2>If anything fails, the link stays closed</h2>
+<p>PhishGuard's engine listens only on your own PC (<code>127.0.0.1</code>). Its pages use a strict Content-Security-Policy, every change needs a security token, and the link launcher proves who it is with its own secret. A security self-test throws 63 attacks at PhishGuard itself; all 63 are stopped. See <a href="{{root}}docs/results.html">Test results</a>.</p>
