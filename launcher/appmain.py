@@ -5,6 +5,7 @@
     PhishGuard.exe --background    start the engine quietly (Start with Windows)
     PhishGuard.exe --unregister    remove the Windows registration (run by the uninstaller)
     PhishGuard.exe --stop          stop the engine and Tor (run before an update or uninstall)
+    PhishGuard.exe --after-update  start the new engine (run by the installer after a silent update)
 
 The engine (web server, sandbox, AI Guard) is the separate PhishGuardEngine.exe next to it, started
 when a link needs checking. Keeping it separate keeps this program small, so a click stays fast.

@@ -3,7 +3,7 @@
 ;   Program:  %LOCALAPPDATA%\Programs\PhishGuard
 ;   Data:     %LOCALAPPDATA%\PhishGuard  (history, settings, Tor once downloaded)
 
-#define AppVersion "1.1.0"
+#define AppVersion "1.1.1"
 
 [Setup]
 AppId={{8F1C2B4E-6A3D-4F7B-9C21-5E0A7D3B9F11}
@@ -42,6 +42,8 @@ Name: "{userdesktop}\PhishGuard"; Filename: "{app}\PhishGuard.exe"; Comment: "Op
 
 [Run]
 Filename: "{app}\PhishGuard.exe"; Description: "Open PhishGuard now"; Flags: nowait postinstall skipifsilent
+; A silent install is an automatic update (phishguard/updater.py): start the new engine straight away.
+Filename: "{app}\PhishGuard.exe"; Parameters: "--after-update"; Flags: nowait runhidden; Check: WizardSilent
 
 [UninstallRun]
 ; Stop the engine (and Tor with it), then remove PhishGuard as a link handler.

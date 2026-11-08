@@ -66,7 +66,9 @@ export const TONE: Record<Level, { text: string; bg: string; soft: string; hero:
 export const band = (v: number): Level => (v >= 50 ? "danger" : v >= 20 ? "caution" : "clear")
 
 // SQLite stores UTC as "YYYY-MM-DD HH:MM:SS": turn it into a Date.
-export const when = (ts: string | null | undefined) => (ts ? new Date(ts.replace(" ", "T") + "Z") : null)
+// The database stores UTC as "YYYY-MM-DD HH:MM:SS"; ISO strings that already carry a zone are used as they are.
+export const when = (ts: string | null | undefined) =>
+  ts ? new Date(/(Z|[+-]\d\d:\d\d)$/.test(ts) ? ts : ts.replace(" ", "T") + "Z") : null
 
 const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: "auto", style: "short" })
 export function ago(ts: string | null | undefined): string {

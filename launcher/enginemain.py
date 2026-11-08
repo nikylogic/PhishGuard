@@ -41,7 +41,13 @@ def main() -> int:
             import registry  # noqa: PLC0415
             import tray  # noqa: PLC0415
             from pathlib import Path  # noqa: PLC0415
-            tray.Tray(Path(os.environ["PHISHGUARD_INSTANCE"]), registry=registry).start()
+
+            from phishguard.updater import settle  # noqa: PLC0415
+            instance = Path(os.environ["PHISHGUARD_INSTANCE"])
+            updated = settle(instance)          # "PhishGuard was updated to 1.2.0", once
+            icon = tray.Tray(instance, registry=registry).start()
+            if updated:
+                icon.notify("PhishGuard", updated, warning="did not" in updated)
         except Exception:  # noqa: BLE001 - the engine works without its icon
             pass
     import run  # noqa: PLC0415

@@ -15,7 +15,7 @@ from .urltools import UnsafeURL, clean_url, registrable_domain
 bp = Blueprint("api", __name__, url_prefix="/api")
 auth_bp = Blueprint("auth", __name__)
 
-SETTING_KEYS = {"browser_path", "llm_provider", "llm_api_key", "llm_model", "keep_days"}
+SETTING_KEYS = {"browser_path", "llm_provider", "llm_api_key", "llm_model", "keep_days", "update_mode"}
 LLM_PROVIDERS = {"none", "gemini", "groq", "ollama"}
 
 
@@ -524,6 +524,8 @@ def write_settings():
             return err("That browser program was not found.")
         if k == "keep_days" and v not in svc().KEEP_CHOICES:
             return err("Choose 30, 90 or 365 days, or keep everything.")
+        if k == "update_mode" and v not in ("auto", "ask", "off"):
+            return err("Choose automatic, ask first or off.")
         if k == "llm_api_key" and v.startswith("•"):
             continue                       # the masked value came back unchanged
         con.execute("INSERT INTO settings(key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
@@ -559,6 +561,44 @@ def history_clear():
 def about():
     from . import __version__
     return jsonify(version=__version__)
+
+
+# --- updates ------------------------------------------------------------------------------------
+
+def updater():
+    return current_app.extensions.get("pg_updater")
+
+
+@bp.get("/update")
+@login_required("admin")
+def update_status():
+    u = updater()
+    if u is None:
+        return jsonify(supported=False, state="unsupported")
+    return jsonify(u.status())
+
+
+@bp.post("/update/check")
+@login_required("admin")
+def update_check():
+    u = updater()
+    if u is None or not u.supported:
+        return err("Updates are installed by the installed app only.", 409)
+    u.check_soon()
+    return jsonify(u.status()), 202
+
+
+@bp.post("/update/install")
+@login_required("admin")
+def update_install():
+    u = updater()
+    if u is None or not u.supported:
+        return err("Updates are installed by the installed app only.", 409)
+    if not u.ready:
+        return err("There is no downloaded update to install. Check for updates first.", 409)
+    if not u.install():
+        return err(u.status().get("error") or "The update could not be started.", 500)
+    return jsonify(u.status())
 
 
 @bp.get("/users")

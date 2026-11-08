@@ -61,6 +61,7 @@ export function Settings() {
           <Startup />
           <DefaultBrowser />
           <RealBrowser />
+          <Updates />
           <About />
         </Column>
       </TabsContent>
@@ -246,6 +247,139 @@ function RealBrowser() {
           {s.browser_path && <FieldDescription className="font-mono text-xs break-all">{s.browser_path}</FieldDescription>}
         </Field>
       </CardContent>
+    </Card>
+  )
+}
+
+type UpdateStatus = {
+  supported: boolean
+  state: "idle" | "checking" | "downloading" | "ready" | "installing" | "up_to_date" | "error" | "unsupported"
+  current: string
+  latest: string | null
+  mode: "auto" | "ask" | "off"
+  checked_at: number | null
+  error: string
+  progress: number
+  size: number
+  last_result: { ok: boolean; version: string; from: string; at: number } | null
+}
+
+const UPDATE_MODES = [
+  { value: "auto", label: "Install updates automatically" },
+  { value: "ask", label: "Download, then ask me" },
+  { value: "off", label: "Do not look for updates" },
+]
+
+// Updates come from PhishGuard's GitHub releases, signed with the PhishGuard release key.
+function Updates() {
+  const [st, setSt] = React.useState<UpdateStatus | null>(null)
+  const [busy, setBusy] = React.useState(false)
+  const load = React.useCallback(() => api<UpdateStatus>("/api/update").then(setSt).catch(() => null), [])
+  React.useEffect(() => {
+    load()
+  }, [load])
+  // Follow a check or download while it runs.
+  React.useEffect(() => {
+    if (st?.state !== "checking" && st?.state !== "downloading") return
+    const t = window.setTimeout(load, 1500)
+    return () => window.clearTimeout(t)
+  }, [st, load])
+  if (!st) return null
+  const admin = boot.user?.role === "admin"
+  const mode = async (v: string) => {
+    setSt({ ...st, mode: v as UpdateStatus["mode"] })
+    await save(
+      { update_mode: v },
+      v === "auto" ? "Updates install by themselves." : v === "ask" ? "PhishGuard will ask before installing." : "PhishGuard will not look for updates.",
+    )
+  }
+  const check = async () => {
+    setBusy(true)
+    try {
+      setSt(await api<UpdateStatus>("/api/update/check", { method: "POST" }))
+    } catch (e) {
+      toast.error(errText(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+  const install = async () => {
+    setBusy(true)
+    try {
+      setSt(await api<UpdateStatus>("/api/update/install", { method: "POST" }))
+      toast.success("Installing the update. PhishGuard restarts in about half a minute.")
+    } catch (e) {
+      toast.error(errText(e))
+      setBusy(false)
+    }
+  }
+  const pct = st.size ? Math.round((st.progress / st.size) * 100) : 0
+  let line = ""
+  if (!st.supported) line = "Updates are installed by the installed app. This copy runs from source."
+  else if (st.state === "checking") line = "Looking for updates…"
+  else if (st.state === "downloading") line = `Downloading PhishGuard ${st.latest}: ${pct}%`
+  else if (st.state === "ready")
+    line =
+      st.mode === "auto"
+        ? `PhishGuard ${st.latest} is downloaded and checked. It installs as soon as no link is being checked.`
+        : `PhishGuard ${st.latest} is downloaded and checked.`
+  else if (st.state === "installing") line = `Installing PhishGuard ${st.latest}…`
+  else if (st.state === "up_to_date") line = "PhishGuard is up to date."
+  else if (st.state === "error") line = st.error
+  else if (st.mode !== "off") line = "PhishGuard looks for updates ten minutes after it starts and then twice a day."
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Updates</CardTitle>
+        <CardDescription>
+          You have PhishGuard {st.current}. Updates come from PhishGuard's GitHub page and are installed only if they carry
+          PhishGuard's digital signature. Your history and settings are kept.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-4">
+        {st.supported && (
+          <Field>
+            <FieldLabel htmlFor="update-mode">When an update comes out</FieldLabel>
+            <Select value={st.mode} onValueChange={mode} disabled={!admin}>
+              <SelectTrigger id="update-mode" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {UPDATE_MODES.map((m) => (
+                  <SelectItem key={m.value} value={m.value}>
+                    {m.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+        )}
+        {line && <p className={st.state === "error" ? "text-sm text-danger" : "text-sm text-muted-foreground"}>{line}</p>}
+        {st.state === "downloading" && <Progress value={pct} />}
+        {st.last_result && (
+          <p className="text-xs text-muted-foreground">
+            {st.last_result.ok
+              ? `Updated from ${st.last_result.from} to ${st.last_result.version} ${ago(new Date(st.last_result.at * 1000).toISOString())}.`
+              : `The update to ${st.last_result.version} did not finish ${ago(new Date(st.last_result.at * 1000).toISOString())}; the installer's log is in the data folder (updates\install.log).`}
+          </p>
+        )}
+        {st.supported && st.checked_at && (
+          <p className="text-xs text-muted-foreground">Last checked {ago(new Date(st.checked_at * 1000).toISOString())}.</p>
+        )}
+      </CardContent>
+      {admin && st.supported && (
+        <CardFooter className="gap-2">
+          <Button variant="outline" disabled={busy || st.state === "checking" || st.state === "downloading" || st.state === "installing"} onClick={check}>
+            {(busy || st.state === "checking") && <Spinner />}
+            Check now
+          </Button>
+          {st.state === "ready" && (
+            <Button disabled={busy} onClick={install}>
+              Install {st.latest} now
+            </Button>
+          )}
+        </CardFooter>
+      )}
     </Card>
   )
 }

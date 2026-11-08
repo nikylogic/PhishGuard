@@ -201,6 +201,17 @@ class ScanService:
         threading.Thread(target=loop, name="pg-housekeeping", daemon=True).start()
         return self
 
+    def busy(self) -> bool:
+        """True while someone is checking a link (or just did, and may still be reading the verdict).
+        Updates wait for a quiet moment, so an Airlock window never goes blank under the user."""
+        con = self._con()
+        try:
+            row = con.execute("SELECT 1 FROM scans WHERE status IN ('queued', 'running') "
+                              "OR created_at > datetime('now', '-3 minutes') LIMIT 1").fetchone()
+        finally:
+            con.close()
+        return row is not None
+
     # --- Hide my IP ----------------------------------------------------------------------------
     def settings(self) -> dict:
         con = self._con()

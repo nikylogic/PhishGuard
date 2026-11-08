@@ -8,7 +8,7 @@ import secrets
 from datetime import timedelta
 from pathlib import Path
 
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 
 from flask import Flask, g, jsonify, request
 from werkzeug.exceptions import HTTPException
@@ -104,6 +104,26 @@ def create_app(overrides: dict | None = None) -> Flask:
                 lambda: Sandbox(instance / "shots", instance / "quarantine", route=service.privacy_route),
                 on_done=service.on_capture, on_start=service.mark_running).start()
     app.extensions["pg_service"] = service
+
+    # Automatic updates (installed app only; tests pass their own or none).
+    if "UPDATER" in overrides:
+        app.extensions["pg_updater"] = overrides["UPDATER"]
+    else:
+        from .updater import Updater, settle
+        settle(instance)                       # record how the last update went, if one just ran
+
+        def audit_update(action, detail):
+            from .auth import audit
+            con = db.connect(app.config["DATABASE"])
+            try:
+                audit(action, detail, con=con)     # the signed-in admin, or nobody when automatic
+            finally:
+                con.close()
+
+        updater = Updater(instance, settings=service.settings, busy=service.busy, audit=audit_update)
+        if app.config.get("START_WORKER"):
+            updater.start()
+        app.extensions["pg_updater"] = updater
 
     @app.after_request
     def security_headers(resp):

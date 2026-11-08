@@ -123,18 +123,21 @@ The danger examples are PhishGuard's built-in test sites (`bank.test`, `files.te
 
 ## Install
 
-1. Download **`PhishGuard-Setup-1.1.0.exe`** from [Releases](../../releases).
+1. Download **`PhishGuard-Setup-1.1.1.exe`** from [Releases](../../releases).
 2. Run it. It installs for your Windows account only, with no admin rights. Google Chrome or Microsoft Edge must be installed (Windows 11 includes Edge).
 3. Open PhishGuard, go to **Settings → General** and press **Make PhishGuard my default browser**. Windows opens its Settings on PhishGuard's page; press **Set default**.
 4. Choose **your real browser** in Settings → General. Safe links open there.
 
 PhishGuard starts quietly with Windows (you can turn this off), so the first link you click is checked straight away. While it runs, its shield icon sits in the notification area next to the clock: click it to open PhishGuard, or right-click to check a link you copied, switch Start with Windows on or off, or quit.
 
+**Updates install themselves.** PhishGuard looks for a new release on this GitHub page twice a day, downloads it, and installs it silently once no link is being checked; your history and settings are kept. An update is installed only if it carries PhishGuard's digital signature (Ed25519), so a tampered or fake installer is refused. In Settings → General you can choose *Download, then ask me* or turn updates off. (Version 1.1.0 has no updater: install 1.1.1 once by hand.)
+
 > **Windows SmartScreen** may warn that the installer is from an unknown publisher, because it is not code-signed yet. Choose *More info → Run anyway*, or build it yourself from source.
 
 ## Privacy
 
 - **Everything runs on your PC.** Verdicts, screenshots and history stay in `%LOCALAPPDATA%\PhishGuard`, inside your own Windows user folder.
+- **Update checks** ask GitHub for the latest release (no data about you or your links is sent).
 - **The phishing lists are downloaded** and checked locally. Your links are never sent to a lookup service.
 - **Website age lookups send only the domain name** (never the full link), and skip popular sites and brands' own domains.
 - **The AI second opinion is off by default.** If you turn it on, the link, the page title, PhishGuard's findings and up to 4,000 characters of the page's visible text go to the provider you choose (Gemini, Groq, or Ollama running offline on your PC). Never cookies, form values or screenshots. AI Guard warns the model about hidden instructions first, and the AI can only raise the risk, never lower it.
