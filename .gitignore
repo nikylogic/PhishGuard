@@ -15,3 +15,4 @@ benchmark-data-collect*.log
 
 # College project report (personal details; built locally)
 report/
+site/data/

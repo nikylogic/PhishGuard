@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PhishGuard test results: detection, speed and security · Docs</title>
+<meta name="description" content="PhishGuard&#x27;s measured results: 87% of brand-new phishing warned without lists, 0.23 s for trusted links, and 63 of 63 attacks on the app stopped.">
+<link rel="canonical" href="https://nikylogic.github.io/PhishGuard/docs/results.html">
+<meta name="theme-color" content="#f5f1e8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12110e" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="PhishGuard">
+<meta property="og:title" content="PhishGuard test results: detection, speed and security · Docs">
+<meta property="og:description" content="PhishGuard&#x27;s measured results: 87% of brand-new phishing warned without lists, 0.23 s for trusted links, and 63 of 63 attacks on the app stopped.">
+<meta property="og:url" content="https://nikylogic.github.io/PhishGuard/docs/results.html">
+<meta property="og:image" content="https://nikylogic.github.io/PhishGuard/images/airlock-danger.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preload" href="../fonts/instrument-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../fonts/plex-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../style.css">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "PhishGuard", "item": "https://nikylogic.github.io/PhishGuard/"}, {"@type": "ListItem", "position": 2, "name": "Docs", "item": "https://nikylogic.github.io/PhishGuard/docs/"}, {"@type": "ListItem", "position": 3, "name": "Test results", "item": "https://nikylogic.github.io/PhishGuard/docs/results.html"}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Test results", "description": "PhishGuard's measured results: 87% of brand-new phishing warned without lists, 0.23 s for trusted links, and 63 of 63 attacks on the app stopped.", "url": "https://nikylogic.github.io/PhishGuard/docs/results.html", "author": {"@type": "Person", "name": "Nikhil P"}, "image": "https://nikylogic.github.io/PhishGuard/images/airlock-danger.png", "publisher": {"@type": "Organization", "name": "PhishGuard", "url": "https://nikylogic.github.io/PhishGuard/"}}</script>
+</head>
+<body class="doc">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href=".././"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="6.4" fill="#171717"/><path d="M16 6.4 25.6 9.6V16L16 26.24 6.4 16V9.6Z" fill="none" stroke="#fff" stroke-width="2"/><path d="M12.16 16 15.04 18.88 20.16 13.12" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>PhishGuard</span></a>
+    <nav aria-label="Main">
+      <a href=".././">Link checker</a>
+      <a href="../docs/" aria-current="page">Docs</a>
+      <a href="../guides/spot-a-phishing-link.html">Guide</a>
+      <a href="https://github.com/nikylogic/PhishGuard">GitHub</a>
+    </nav>
+    <a class="pill" href="https://github.com/nikylogic/PhishGuard/releases/latest" data-dl>Download</a>
+  </div>
+</header>
+<main id="main">
+<div class="doc-wrap with-side">
+  <nav class="side" aria-label="Docs"><a href="../docs/">Getting started</a><a href="../docs/how-it-works.html">How it works</a><a href="../docs/detection.html">What it detects</a><a href="../docs/link-checker.html">The web link checker</a><a href="../docs/privacy.html">Privacy</a><a href="../docs/updates.html">Updates</a><a href="../docs/results.html" aria-current="page">Test results</a></nav>
+  <article class="prose">
+    <p class="crumbs"><a href=".././">Home</a> <span>/</span> <a href="../docs/">Docs</a></p>
+    <h1>Test results</h1>
+    <p class="lead">How well PhishGuard catches phishing, how fast it is, and how it holds up when attacked. Every number links to the raw evidence in the repository.</p>
+    <h2 id="catching-phishing">Catching phishing</h2>
+<p>Live phishing links from OpenPhish and phishunt.io, and real websites, were opened in the sandbox on 6 November 2026. The <b>held-out</b> batch was collected after the rules were written and scored once.</p>
+<div class="table"><table>
+  <thead><tr><th>Held-out batch: 71 phishing pages, 61 real sites</th><th class="num">Previous version</th><th class="num">PhishGuard now, without the lists</th></tr></thead>
+  <tbody>
+    <tr><td>Phishing called <b>Danger</b></td><td class="num">6%</td><td class="num"><b>45%</b></td></tr>
+    <tr><td>Phishing <b>warned</b> (Danger or Caution)</td><td class="num">45%</td><td class="num"><b>87%</b></td></tr>
+    <tr><td>Real sites wrongly warned</td><td class="num">10%</td><td class="num"><b>0–5%</b></td></tr>
+  </tbody>
+</table></div>
+<ul>
+  <li><b>Why "without the lists"?</b> That is the case that matters: a brand-new phishing site nobody has reported yet. With the lists every test link was caught, but only because the links came from those same lists.</li>
+  <li>Some phishing links showed the sandbox a decoy, such as a real Google page or a "403" error. Only the lists and the address rules can catch those; they are reported separately.</li>
+  <li><b>The samples are small</b> (60 to 110 pages per group), so each figure is uncertain by about ±10 points.</li>
+</ul>
+<p><a href="https://github.com/nikylogic/PhishGuard/blob/main/proof/phase-9-detection/SUMMARY.md">Full tables, every miss and every false alarm →</a></p>
+
+<h2 id="speed">Speed</h2>
+<p>Median of 20 runs on a Windows 11 PC (AMD Ryzen, 16 threads, 16 GB RAM), 8 November 2026.</p>
+<div class="table"><table>
+  <thead><tr><th>Measurement</th><th class="num">Median</th><th class="num">Target</th></tr></thead>
+  <tbody>
+    <tr><td>Trusted link, click to browser (installed app)</td><td class="num">0.23 s</td><td class="num">&lt; 0.3 s</td></tr>
+    <tr><td>Address rules, per link</td><td class="num">0.43 ms</td><td class="num">&lt; 50 ms</td></tr>
+    <tr><td>Sandbox capture of a real site</td><td class="num">2.25 s</td><td class="num">20 s limit</td></tr>
+    <tr><td>Click to full verdict, real site</td><td class="num">2.36 s</td><td class="num">–</td></tr>
+    <tr><td>AI Guard, per text</td><td class="num">2.5 ms</td><td class="num">&lt; 5 ms</td></tr>
+  </tbody>
+</table></div>
+<p><a href="https://github.com/nikylogic/PhishGuard/blob/main/proof/phase-9/performance.md">All speed measurements →</a></p>
+
+<h2 id="attacking-phishguard-itself">Attacking PhishGuard itself</h2>
+<p>A tool that opens dangerous links must not become the way in. A security self-test starts a real engine, real fake attack sites, the real sandbox and a real Chrome window, and throws <b>63 attacks</b> at it: network exposure, DNS rebinding, cross-site requests, authentication, SQL injection, path traversal, unsafe links, parser confusion, server-side request forgery, script injection, sandbox escapes, prompt injection, the link launcher and password guessing. <b>All 63 are stopped.</b></p>
+<p>One real problem was found while building that test and fixed: a backslash trick that made a link look like a trusted site to the app but open a different site in Chrome.</p>
+<p><a href="https://github.com/nikylogic/PhishGuard/blob/main/proof/phase-9/security-selftest.md">The security self-test →</a></p>
+
+<h2 id="automated-tests">Automated tests</h2>
+<p>552 automated tests run on Windows for every change, including the 65-link check that the web link checker matches the app.</p>
+
+    <nav class="pager" aria-label="More docs"><a class="prev" href="../docs/updates.html"><span>Previous</span>Updates</a><span></span></nav>
+  </article>
+  <nav class="toc" aria-label="On this page"><h2>On this page</h2><a href="#catching-phishing">Catching phishing</a><a href="#speed">Speed</a><a href="#attacking-phishguard-itself">Attacking PhishGuard itself</a><a href="#automated-tests">Automated tests</a></nav>
+</div>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <div class="foot-brand">
+      <a class="brand" href=".././"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="6.4" fill="#171717"/><path d="M16 6.4 25.6 9.6V16L16 26.24 6.4 16V9.6Z" fill="none" stroke="#fff" stroke-width="2"/><path d="M12.16 16 15.04 18.88 20.16 13.12" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>PhishGuard</span></a>
+      <p>A link airlock for Windows. Every link from your apps opens in a hidden browser first.</p>
+      <a class="go small" href="https://github.com/nikylogic/PhishGuard/releases/latest" data-dl>Download for Windows</a>
+    </div>
+    <nav aria-label="Docs"><h2>Docs</h2><a href="../docs/">Getting started</a><a href="../docs/how-it-works.html">How it works</a><a href="../docs/detection.html">What it detects</a><a href="../docs/link-checker.html">The web link checker</a><a href="../docs/privacy.html">Privacy</a><a href="../docs/updates.html">Updates</a><a href="../docs/results.html">Test results</a></nav>
+    <nav aria-label="Project"><h2>Project</h2>
+      <a href=".././">Free link checker</a>
+      <a href="../guides/spot-a-phishing-link.html">Spot a phishing link</a>
+      <a href="https://github.com/nikylogic/PhishGuard">Source code</a>
+      <a href="https://github.com/nikylogic/PhishGuard/releases">Releases</a>
+      <a href="https://github.com/nikylogic/PhishGuard/issues/new/choose">Report a miss</a>
+      <a href="https://github.com/nikylogic/PhishGuard/security">Security</a>
+    </nav>
+  </div>
+  <p class="fine">Made by Nikhil P · Free for personal use under the
+    <a href="https://github.com/nikylogic/PhishGuard/blob/main/LICENSE">PolyForm Noncommercial License</a> · Version 1.1.1</p>
+</footer>
+<script src="../main.js" defer></script>
+</body>
+</html>

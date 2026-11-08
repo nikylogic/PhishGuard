@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to spot a phishing link: 8 signs to check before you click</title>
+<meta name="description" content="How to tell if a link is phishing: look-alike brand names, the real domain at the end, risky endings, @ tricks, shorteners, bait words and new sites.">
+<link rel="canonical" href="https://nikylogic.github.io/PhishGuard/guides/spot-a-phishing-link.html">
+<meta name="theme-color" content="#f5f1e8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12110e" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="PhishGuard">
+<meta property="og:title" content="How to spot a phishing link: 8 signs to check before you click">
+<meta property="og:description" content="How to tell if a link is phishing: look-alike brand names, the real domain at the end, risky endings, @ tricks, shorteners, bait words and new sites.">
+<meta property="og:url" content="https://nikylogic.github.io/PhishGuard/guides/spot-a-phishing-link.html">
+<meta property="og:image" content="https://nikylogic.github.io/PhishGuard/images/airlock-danger.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preload" href="../fonts/instrument-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../fonts/plex-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../style.css">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "PhishGuard", "item": "https://nikylogic.github.io/PhishGuard/"}, {"@type": "ListItem", "position": 2, "name": "Spot a phishing link", "item": "https://nikylogic.github.io/PhishGuard/guides/spot-a-phishing-link.html"}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "How to spot a phishing link", "description": "How to tell if a link is phishing: look-alike brand names, the real domain at the end, risky endings, @ tricks, shorteners, bait words and new sites.", "url": "https://nikylogic.github.io/PhishGuard/guides/spot-a-phishing-link.html", "author": {"@type": "Person", "name": "Nikhil P"}, "image": "https://nikylogic.github.io/PhishGuard/images/airlock-danger.png", "publisher": {"@type": "Organization", "name": "PhishGuard", "url": "https://nikylogic.github.io/PhishGuard/"}}</script>
+</head>
+<body class="guide">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href=".././"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="6.4" fill="#171717"/><path d="M16 6.4 25.6 9.6V16L16 26.24 6.4 16V9.6Z" fill="none" stroke="#fff" stroke-width="2"/><path d="M12.16 16 15.04 18.88 20.16 13.12" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>PhishGuard</span></a>
+    <nav aria-label="Main">
+      <a href=".././">Link checker</a>
+      <a href="../docs/">Docs</a>
+      <a href="../guides/spot-a-phishing-link.html" aria-current="page">Guide</a>
+      <a href="https://github.com/nikylogic/PhishGuard">GitHub</a>
+    </nav>
+    <a class="pill" href="https://github.com/nikylogic/PhishGuard/releases/latest" data-dl>Download</a>
+  </div>
+</header>
+<main id="main">
+<div class="doc-wrap">
+  
+  <article class="prose">
+    <p class="crumbs"><a href=".././">Home</a> <span>/</span> Guides</p>
+    <h1>How to spot a phishing link</h1>
+    <p class="lead">Eight signs that a link is not what it claims, with real examples. Each one is a rule PhishGuard checks automatically.</p>
+    <p class="callout">Not sure about a link right now? <a href=".././">Paste it into the free link checker</a>. It checks all eight signs in seconds.</p>
+
+<h2 id="1-find-the-real-website-it-is-at-the-end">1. Find the real website: it is at the end</h2>
+<p>Look at the name between <code>https://</code> and the next <code>/</code>. The real website is the <b>last two parts</b> of that name (three for endings like <code>.co.uk</code> or <code>.bank.in</code>). In <code>https://hdfcbank.com.secure-login.top/verify</code> the website is <b>secure-login.top</b>, not hdfcbank.com. Everything in front of it is decoration anyone can add.</p>
+
+<h2 id="2-a-brand-name-on-someone-else-s-website">2. A brand name on someone else's website</h2>
+<p><code>paypal.com-secure-help.site</code> and <code>sbi-kyc-update.xyz</code> both use a brand name, but neither is run by that brand. Banks and payment apps use a small set of their own domains; HDFC Bank, for example, uses <code>hdfcbank.com</code> and <code>hdfc.bank.in</code>. PhishGuard knows the real domains of 107 brands.</p>
+
+<h2 id="3-letters-that-only-look-right">3. Letters that only look right</h2>
+<p><code>paypa1.com</code> uses the digit 1 for an l. <code>amaz0n</code> uses a zero. Some fakes swap in letters from other alphabets that look identical, such as a Cyrillic а in "аpple"; your browser may show these as <code>xn--</code> addresses. Read slowly, letter by letter.</p>
+
+<h2 id="4-an-unusual-ending">4. An unusual ending</h2>
+<p>Endings like <code>.top</code>, <code>.xyz</code>, <code>.click</code>, <code>.icu</code> and <code>.zip</code> are cheap and heavily used by scam sites. A bank will not send you to one.</p>
+
+<h2 id="5-an-sign-in-the-address">5. An @ sign in the address</h2>
+<p>In <code>https://bank.com@evil.example/login</code> the browser ignores everything before the <code>@</code> and opens <b>evil.example</b>. Real links almost never contain one.</p>
+
+<h2 id="6-bait-words">6. Bait words</h2>
+<p>Words like <em>verify</em>, <em>kyc</em>, <em>suspended</em>, <em>refund</em>, <em>reward</em> and <em>login</em> in an address are designed to rush you. Banks do not ask you to "verify KYC" through a link in a message.</p>
+
+<h2 id="7-shortened-links-and-brand-new-websites">7. Shortened links and brand-new websites</h2>
+<p>A shortened link (<code>bit.ly/…</code>) hides where it goes. And many scam sites are only days old: a website registered last week asking for your bank password is a strong warning sign.</p>
+
+<h2 id="8-no-padlock-http-instead-of-https">8. No padlock: http instead of https</h2>
+<p>A page asking for a password over <code>http://</code> sends it unencrypted. Note the reverse is not true: most phishing sites today do have a padlock, so https alone proves nothing.</p>
+
+<h2 id="what-an-address-cannot-tell-you">What an address cannot tell you</h2>
+<p>A perfectly normal-looking address can still lead to a fake login page, a malware download or a fake virus alert, because those only show up when the page loads. That is why the <a href="../docs/how-it-works.html">PhishGuard app</a> opens every unknown link in a hidden browser first and shows you what is really there.</p>
+<p>If you already typed a password into a page you now doubt, change that password straight away from the real website, turn on two-step sign-in, and tell your bank if card or account details were involved.</p>
+
+    
+  </article>
+  <nav class="toc" aria-label="On this page"><h2>On this page</h2><a href="#1-find-the-real-website-it-is-at-the-end">1. Find the real website: it is at the end</a><a href="#2-a-brand-name-on-someone-else-s-website">2. A brand name on someone else&#x27;s website</a><a href="#3-letters-that-only-look-right">3. Letters that only look right</a><a href="#4-an-unusual-ending">4. An unusual ending</a><a href="#5-an-sign-in-the-address">5. An @ sign in the address</a><a href="#6-bait-words">6. Bait words</a><a href="#7-shortened-links-and-brand-new-websites">7. Shortened links and brand-new websites</a><a href="#8-no-padlock-http-instead-of-https">8. No padlock: http instead of https</a><a href="#what-an-address-cannot-tell-you">What an address cannot tell you</a></nav>
+</div>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <div class="foot-brand">
+      <a class="brand" href=".././"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="6.4" fill="#171717"/><path d="M16 6.4 25.6 9.6V16L16 26.24 6.4 16V9.6Z" fill="none" stroke="#fff" stroke-width="2"/><path d="M12.16 16 15.04 18.88 20.16 13.12" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>PhishGuard</span></a>
+      <p>A link airlock for Windows. Every link from your apps opens in a hidden browser first.</p>
+      <a class="go small" href="https://github.com/nikylogic/PhishGuard/releases/latest" data-dl>Download for Windows</a>
+    </div>
+    <nav aria-label="Docs"><h2>Docs</h2><a href="../docs/">Getting started</a><a href="../docs/how-it-works.html">How it works</a><a href="../docs/detection.html">What it detects</a><a href="../docs/link-checker.html">The web link checker</a><a href="../docs/privacy.html">Privacy</a><a href="../docs/updates.html">Updates</a><a href="../docs/results.html">Test results</a></nav>
+    <nav aria-label="Project"><h2>Project</h2>
+      <a href=".././">Free link checker</a>
+      <a href="../guides/spot-a-phishing-link.html">Spot a phishing link</a>
+      <a href="https://github.com/nikylogic/PhishGuard">Source code</a>
+      <a href="https://github.com/nikylogic/PhishGuard/releases">Releases</a>
+      <a href="https://github.com/nikylogic/PhishGuard/issues/new/choose">Report a miss</a>
+      <a href="https://github.com/nikylogic/PhishGuard/security">Security</a>
+    </nav>
+  </div>
+  <p class="fine">Made by Nikhil P · Free for personal use under the
+    <a href="https://github.com/nikylogic/PhishGuard/blob/main/LICENSE">PolyForm Noncommercial License</a> · Version 1.1.1</p>
+</footer>
+<script src="../main.js" defer></script>
+</body>
+</html>

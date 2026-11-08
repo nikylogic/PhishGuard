@@ -1,0 +1,36 @@
+<!--page {
+  "path": "guides/spot-a-phishing-link.html", "kind": "guide", "nav": "Spot a phishing link",
+  "title": "How to spot a phishing link: 8 signs to check before you click",
+  "h1": "How to spot a phishing link",
+  "lead": "Eight signs that a link is not what it claims, with real examples. Each one is a rule PhishGuard checks automatically.",
+  "description": "How to tell if a link is phishing: look-alike brand names, the real domain at the end, risky endings, @ tricks, shorteners, bait words and new sites."
+} -->
+<p class="callout">Not sure about a link right now? <a href="{{root}}./">Paste it into the free link checker</a>. It checks all eight signs in seconds.</p>
+
+<h2>1. Find the real website: it is at the end</h2>
+<p>Look at the name between <code>https://</code> and the next <code>/</code>. The real website is the <b>last two parts</b> of that name (three for endings like <code>.co.uk</code> or <code>.bank.in</code>). In <code>https://hdfcbank.com.secure-login.top/verify</code> the website is <b>secure-login.top</b>, not hdfcbank.com. Everything in front of it is decoration anyone can add.</p>
+
+<h2>2. A brand name on someone else's website</h2>
+<p><code>paypal.com-secure-help.site</code> and <code>sbi-kyc-update.xyz</code> both use a brand name, but neither is run by that brand. Banks and payment apps use a small set of their own domains; HDFC Bank, for example, uses <code>hdfcbank.com</code> and <code>hdfc.bank.in</code>. PhishGuard knows the real domains of {{brand_count}} brands.</p>
+
+<h2>3. Letters that only look right</h2>
+<p><code>paypa1.com</code> uses the digit 1 for an l. <code>amaz0n</code> uses a zero. Some fakes swap in letters from other alphabets that look identical, such as a Cyrillic а in "аpple"; your browser may show these as <code>xn--</code> addresses. Read slowly, letter by letter.</p>
+
+<h2>4. An unusual ending</h2>
+<p>Endings like <code>.top</code>, <code>.xyz</code>, <code>.click</code>, <code>.icu</code> and <code>.zip</code> are cheap and heavily used by scam sites. A bank will not send you to one.</p>
+
+<h2>5. An @ sign in the address</h2>
+<p>In <code>https://bank.com@evil.example/login</code> the browser ignores everything before the <code>@</code> and opens <b>evil.example</b>. Real links almost never contain one.</p>
+
+<h2>6. Bait words</h2>
+<p>Words like <em>verify</em>, <em>kyc</em>, <em>suspended</em>, <em>refund</em>, <em>reward</em> and <em>login</em> in an address are designed to rush you. Banks do not ask you to "verify KYC" through a link in a message.</p>
+
+<h2>7. Shortened links and brand-new websites</h2>
+<p>A shortened link (<code>bit.ly/…</code>) hides where it goes. And many scam sites are only days old: a website registered last week asking for your bank password is a strong warning sign.</p>
+
+<h2>8. No padlock: http instead of https</h2>
+<p>A page asking for a password over <code>http://</code> sends it unencrypted. Note the reverse is not true: most phishing sites today do have a padlock, so https alone proves nothing.</p>
+
+<h2>What an address cannot tell you</h2>
+<p>A perfectly normal-looking address can still lead to a fake login page, a malware download or a fake virus alert, because those only show up when the page loads. That is why the <a href="{{root}}docs/how-it-works.html">PhishGuard app</a> opens every unknown link in a hidden browser first and shows you what is really there.</p>
+<p>If you already typed a password into a page you now doubt, change that password straight away from the real website, turn on two-step sign-in, and tell your bank if card or account details were involved.</p>

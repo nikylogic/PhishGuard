@@ -1,0 +1,34 @@
+<!--page {
+  "path": "docs/detection.html", "kind": "doc", "nav": "What it detects", "order": 3,
+  "title": "What PhishGuard detects: every phishing check, explained · Docs",
+  "h1": "What it detects",
+  "lead": "Every rule PhishGuard uses, how many points it adds and the exact words you see. This page is generated from the engine's own rule table, so it always matches the app.",
+  "description": "Every PhishGuard phishing, malware, tracking and scam check, with its weight and exact message, plus the {{brand_count}} banks and brands it protects."
+} -->
+<h2>How a fake site is spotted</h2>
+<p>Spelling comparisons either miss fakes or flag real sites: HDFC and HSBC, booking.com and cooking.com look alike on paper. PhishGuard asks a better question, following the research systems Phishpedia (USENIX Security 2021) and PhishIntention (USENIX Security 2022): <em>which brand does this page claim to be, and is it on that brand's real website?</em></p>
+<ul>
+  <li><b>{{brand_count}} brands</b>: Indian banks and payment apps, government services and global brands, each with its real domains and {{favicon_count}} favicon fingerprints in all.</li>
+  <li>The claimed brand is read from the page's copied favicon, logo, site name and title.</li>
+  <li>India's <code>.bank.in</code> and <code>.gov.in</code> zones, which only verified owners can register, are understood.</li>
+  <li>Free hosting (blogspot, vercel.app, pages.dev, firebaseapp and others) is never trusted as a brand: much of today's phishing lives there.</li>
+  <li>News sites and forums writing about a bank are not impersonations.</li>
+</ul>
+
+<h2>Scoring</h2>
+<p>Points add up within each group and are capped at 100. <b>Danger</b> starts at 50, <b>Caution</b> at 20. A rule marked <span class="chip">adds to others</span> only strengthens a warning another rule started; <span class="chip">shown, not scored</span> appears in the privacy report without affecting the verdict. Words in <var>italics</var> are filled in with the details of the link.</p>
+
+<h2>Rules on the address</h2>
+<p>These run on the link itself, before anything loads. The free <a href="{{root}}./">link checker</a> on this website runs all of them in your browser, except your own block list, which only exists in the app. It also checks the phishing lists and the website's age (<code>PHISH_LISTED</code> and <code>DOMAIN_NEW</code> below).</p>
+{{rules:url}}
+
+<h2>Rules on the page</h2>
+<p>These need the page to be opened, so only the Windows app runs them, inside the sandbox.</p>
+{{rules:page}}
+
+<h2>Brands it protects</h2>
+<p>A page that presents itself as one of these brands, but is not on one of its real domains, is flagged however its address is spelled. Missing your bank? <a href="https://github.com/nikylogic/PhishGuard/blob/main/phishguard/data/brands.json">Adding a brand</a> is one entry in a file.</p>
+{{brands}}
+
+<h2>AI Guard</h2>
+<p>AI Guard is a small model (1.3 MB) trained for this project. It finds hidden text written to trick AI assistants, known as prompt injection. On its test set it scores F1 0.915 and takes about 3 ms per text.</p>

@@ -1,0 +1,29 @@
+<!--page {
+  "path": "docs/updates.html", "kind": "doc", "nav": "Updates", "order": 6,
+  "title": "Signed automatic updates · PhishGuard Docs",
+  "h1": "Updates",
+  "lead": "PhishGuard keeps itself up to date, and installs an update only when it carries PhishGuard's digital signature.",
+  "description": "How PhishGuard updates itself: it checks GitHub twice a day, verifies an Ed25519 signature and the installer's fingerprint, then installs quietly."
+} -->
+<h2>How it works</h2>
+<ol class="numbered">
+  <li>Ten minutes after it starts, and then every 12 hours, PhishGuard asks GitHub for the latest release.</li>
+  <li>If there is a newer version, it downloads a small description of the release and its signature.</li>
+  <li>It checks the signature with the public key built into the app. Only the holder of PhishGuard's private key can make a valid one.</li>
+  <li>It downloads the installer from PhishGuard's own GitHub releases and checks its size and SHA-256 fingerprint against the signed description.</li>
+  <li>When no link is being checked, it installs silently, keeping your history and settings, and starts again. A notification says when it is done.</li>
+</ol>
+
+<h2>What is refused</h2>
+<ul>
+  <li>A release without a valid signature, or with a signature for different contents.</li>
+  <li>An installer whose size or fingerprint does not match.</li>
+  <li>A download from anywhere but PhishGuard's own release page.</li>
+  <li>An older version than the one installed: updates never go backwards.</li>
+</ul>
+
+<h2>Your choice</h2>
+<p>In <b>Settings → General → Updates</b> choose <em>Install automatically</em> (the default), <em>Download, then ask me</em>, or <em>Off</em>. <em>Check now</em> looks straight away.</p>
+
+<h2>Upgrading from 1.1.0</h2>
+<p>Version 1.1.0 has no updater. Install the <a href="https://github.com/nikylogic/PhishGuard/releases/latest" data-dl>latest release</a> once by hand; from then on it updates itself.</p>

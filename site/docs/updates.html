@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signed automatic updates · PhishGuard Docs</title>
+<meta name="description" content="How PhishGuard updates itself: it checks GitHub twice a day, verifies an Ed25519 signature and the installer&#x27;s fingerprint, then installs quietly.">
+<link rel="canonical" href="https://nikylogic.github.io/PhishGuard/docs/updates.html">
+<meta name="theme-color" content="#f5f1e8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12110e" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="PhishGuard">
+<meta property="og:title" content="Signed automatic updates · PhishGuard Docs">
+<meta property="og:description" content="How PhishGuard updates itself: it checks GitHub twice a day, verifies an Ed25519 signature and the installer&#x27;s fingerprint, then installs quietly.">
+<meta property="og:url" content="https://nikylogic.github.io/PhishGuard/docs/updates.html">
+<meta property="og:image" content="https://nikylogic.github.io/PhishGuard/images/airlock-danger.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preload" href="../fonts/instrument-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../fonts/plex-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../style.css">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "PhishGuard", "item": "https://nikylogic.github.io/PhishGuard/"}, {"@type": "ListItem", "position": 2, "name": "Docs", "item": "https://nikylogic.github.io/PhishGuard/docs/"}, {"@type": "ListItem", "position": 3, "name": "Updates", "item": "https://nikylogic.github.io/PhishGuard/docs/updates.html"}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Updates", "description": "How PhishGuard updates itself: it checks GitHub twice a day, verifies an Ed25519 signature and the installer's fingerprint, then installs quietly.", "url": "https://nikylogic.github.io/PhishGuard/docs/updates.html", "author": {"@type": "Person", "name": "Nikhil P"}, "image": "https://nikylogic.github.io/PhishGuard/images/airlock-danger.png", "publisher": {"@type": "Organization", "name": "PhishGuard", "url": "https://nikylogic.github.io/PhishGuard/"}}</script>
+</head>
+<body class="doc">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href=".././"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="6.4" fill="#171717"/><path d="M16 6.4 25.6 9.6V16L16 26.24 6.4 16V9.6Z" fill="none" stroke="#fff" stroke-width="2"/><path d="M12.16 16 15.04 18.88 20.16 13.12" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>PhishGuard</span></a>
+    <nav aria-label="Main">
+      <a href=".././">Link checker</a>
+      <a href="../docs/" aria-current="page">Docs</a>
+      <a href="../guides/spot-a-phishing-link.html">Guide</a>
+      <a href="https://github.com/nikylogic/PhishGuard">GitHub</a>
+    </nav>
+    <a class="pill" href="https://github.com/nikylogic/PhishGuard/releases/latest" data-dl>Download</a>
+  </div>
+</header>
+<main id="main">
+<div class="doc-wrap with-side">
+  <nav class="side" aria-label="Docs"><a href="../docs/">Getting started</a><a href="../docs/how-it-works.html">How it works</a><a href="../docs/detection.html">What it detects</a><a href="../docs/link-checker.html">The web link checker</a><a href="../docs/privacy.html">Privacy</a><a href="../docs/updates.html" aria-current="page">Updates</a><a href="../docs/results.html">Test results</a></nav>
+  <article class="prose">
+    <p class="crumbs"><a href=".././">Home</a> <span>/</span> <a href="../docs/">Docs</a></p>
+    <h1>Updates</h1>
+    <p class="lead">PhishGuard keeps itself up to date, and installs an update only when it carries PhishGuard's digital signature.</p>
+    <h2 id="how-it-works">How it works</h2>
+<ol class="numbered">
+  <li>Ten minutes after it starts, and then every 12 hours, PhishGuard asks GitHub for the latest release.</li>
+  <li>If there is a newer version, it downloads a small description of the release and its signature.</li>
+  <li>It checks the signature with the public key built into the app. Only the holder of PhishGuard's private key can make a valid one.</li>
+  <li>It downloads the installer from PhishGuard's own GitHub releases and checks its size and SHA-256 fingerprint against the signed description.</li>
+  <li>When no link is being checked, it installs silently, keeping your history and settings, and starts again. A notification says when it is done.</li>
+</ol>
+
+<h2 id="what-is-refused">What is refused</h2>
+<ul>
+  <li>A release without a valid signature, or with a signature for different contents.</li>
+  <li>An installer whose size or fingerprint does not match.</li>
+  <li>A download from anywhere but PhishGuard's own release page.</li>
+  <li>An older version than the one installed: updates never go backwards.</li>
+</ul>
+
+<h2 id="your-choice">Your choice</h2>
+<p>In <b>Settings → General → Updates</b> choose <em>Install automatically</em> (the default), <em>Download, then ask me</em>, or <em>Off</em>. <em>Check now</em> looks straight away.</p>
+
+<h2 id="upgrading-from-1-1-0">Upgrading from 1.1.0</h2>
+<p>Version 1.1.0 has no updater. Install the <a href="https://github.com/nikylogic/PhishGuard/releases/latest" data-dl>latest release</a> once by hand; from then on it updates itself.</p>
+
+    <nav class="pager" aria-label="More docs"><a class="prev" href="../docs/privacy.html"><span>Previous</span>Privacy</a><a class="next" href="../docs/results.html"><span>Next</span>Test results</a></nav>
+  </article>
+  <nav class="toc" aria-label="On this page"><h2>On this page</h2><a href="#how-it-works">How it works</a><a href="#what-is-refused">What is refused</a><a href="#your-choice">Your choice</a><a href="#upgrading-from-1-1-0">Upgrading from 1.1.0</a></nav>
+</div>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <div class="foot-brand">
+      <a class="brand" href=".././"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="6.4" fill="#171717"/><path d="M16 6.4 25.6 9.6V16L16 26.24 6.4 16V9.6Z" fill="none" stroke="#fff" stroke-width="2"/><path d="M12.16 16 15.04 18.88 20.16 13.12" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>PhishGuard</span></a>
+      <p>A link airlock for Windows. Every link from your apps opens in a hidden browser first.</p>
+      <a class="go small" href="https://github.com/nikylogic/PhishGuard/releases/latest" data-dl>Download for Windows</a>
+    </div>
+    <nav aria-label="Docs"><h2>Docs</h2><a href="../docs/">Getting started</a><a href="../docs/how-it-works.html">How it works</a><a href="../docs/detection.html">What it detects</a><a href="../docs/link-checker.html">The web link checker</a><a href="../docs/privacy.html">Privacy</a><a href="../docs/updates.html">Updates</a><a href="../docs/results.html">Test results</a></nav>
+    <nav aria-label="Project"><h2>Project</h2>
+      <a href=".././">Free link checker</a>
+      <a href="../guides/spot-a-phishing-link.html">Spot a phishing link</a>
+      <a href="https://github.com/nikylogic/PhishGuard">Source code</a>
+      <a href="https://github.com/nikylogic/PhishGuard/releases">Releases</a>
+      <a href="https://github.com/nikylogic/PhishGuard/issues/new/choose">Report a miss</a>
+      <a href="https://github.com/nikylogic/PhishGuard/security">Security</a>
+    </nav>
+  </div>
+  <p class="fine">Made by Nikhil P · Free for personal use under the
+    <a href="https://github.com/nikylogic/PhishGuard/blob/main/LICENSE">PolyForm Noncommercial License</a> · Version 1.1.1</p>
+</footer>
+<script src="../main.js" defer></script>
+</body>
+</html>

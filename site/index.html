@@ -3,297 +3,170 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PhishGuard: a link airlock for Windows</title>
-<meta name="description" content="PhishGuard opens every link you click in a hidden sandbox on your PC first, shows you what the page really is and why, and lets you decide. Free for personal use. Windows 10 and 11.">
-<meta name="theme-color" content="#171717">
+<title>Is this link safe? Free phishing link checker · PhishGuard</title>
+<meta name="description" content="Paste a link to see if it is a fake: look-alike bank addresses, reported phishing and new sites. Free, no sign-up, and the full link never leaves your browser.">
+<link rel="canonical" href="https://nikylogic.github.io/PhishGuard/">
+<meta name="theme-color" content="#f5f1e8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12110e" media="(prefers-color-scheme: dark)">
 <meta property="og:type" content="website">
-<meta property="og:title" content="PhishGuard: every link waits in the airlock first">
-<meta property="og:description" content="A free link airlock for Windows. Unknown links open in a hidden sandbox on your PC, and you decide.">
-<meta property="og:image" content="https://nikylogic.github.io/PhishGuard/images/airlock-danger.png">
+<meta property="og:site_name" content="PhishGuard">
+<meta property="og:title" content="Is this link safe? Free phishing link checker">
+<meta property="og:description" content="Paste a link to see if it is a fake: look-alike bank addresses, reported phishing and new sites. Free, no sign-up, and the full link never leaves your browser.">
 <meta property="og:url" content="https://nikylogic.github.io/PhishGuard/">
+<meta property="og:image" content="https://nikylogic.github.io/PhishGuard/images/airlock-danger.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preload" href="fonts/instrument-serif.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/plex-sans.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/space-grotesk.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="style.css">
-<script type="application/ld+json">
-{"@context":"https://schema.org","@type":"SoftwareApplication","name":"PhishGuard","operatingSystem":"Windows 10, Windows 11",
- "applicationCategory":"SecurityApplication","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},
- "description":"A link airlock for Windows: every link you click opens in a hidden sandbox first.",
- "url":"https://nikylogic.github.io/PhishGuard/","downloadUrl":"https://github.com/nikylogic/PhishGuard/releases/latest",
- "author":{"@type":"Person","name":"Nikhil P"}}
-</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": ["SoftwareApplication", "WebApplication"], "name": "PhishGuard", "url": "https://nikylogic.github.io/PhishGuard/", "applicationCategory": "SecurityApplication", "operatingSystem": "Windows 10, Windows 11; any modern browser for the link checker", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}, "downloadUrl": "https://github.com/nikylogic/PhishGuard/releases/latest", "description": "A free phishing link checker, and a Windows app that opens every link from your apps in a hidden browser before it reaches you.", "author": {"@type": "Person", "name": "Nikhil P"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I check if a link is safe?", "acceptedAnswer": {"@type": "Answer", "text": "Paste it into the PhishGuard link checker. It checks the address against the rules PhishGuard's Windows app uses, about 380,000 reported phishing domains and the website's registration date, then tells you what it found in plain words."}}, {"@type": "Question", "name": "Is my link sent to a server?", "acceptedAnswer": {"@type": "Answer", "text": "No. The check runs in your browser. To look the link up in the phishing lists, your browser downloads one small file chosen by a hash of the address. Only the domain name is sent to its official registry to read the website's age."}}, {"@type": "Question", "name": "What does the Windows app do that the website cannot?", "acceptedAnswer": {"@type": "Answer", "text": "It opens the page itself in a hidden, throwaway browser on your PC before you see it, so it also catches fake login forms, malware downloads, fake virus alerts and other tricks that only show up on the page."}}, {"@type": "Question", "name": "Is PhishGuard free?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, for personal use and for non-profit organisations such as schools and charities. The full source code is on GitHub."}}, {"@type": "Question", "name": "Does it replace my antivirus?", "acceptedAnswer": {"@type": "Answer", "text": "No, keep both. Antivirus protects the files on your PC; PhishGuard protects the moment you click a link."}}]}</script>
 </head>
-<body>
+<body class="home">
 <a class="skip" href="#main">Skip to content</a>
-
-<header class="nav">
-  <div class="wrap nav-in">
-    <a class="brand" href="#top" aria-label="PhishGuard home">
-      <img src="favicon.svg" alt="" width="28" height="28">
-      <span>PhishGuard</span>
-    </a>
-    <nav aria-label="Sections">
-      <a href="#how">How it works</a>
-      <a href="#catches">What it catches</a>
-      <a href="#proof">Proof</a>
-      <a href="#privacy">Privacy</a>
-      <a href="#faq">FAQ</a>
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="./"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="6.4" fill="#171717"/><path d="M16 6.4 25.6 9.6V16L16 26.24 6.4 16V9.6Z" fill="none" stroke="#fff" stroke-width="2"/><path d="M12.16 16 15.04 18.88 20.16 13.12" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>PhishGuard</span></a>
+    <nav aria-label="Main">
+      <a href="./" aria-current="page">Link checker</a>
+      <a href="docs/">Docs</a>
+      <a href="guides/spot-a-phishing-link.html">Guide</a>
+      <a href="https://github.com/nikylogic/PhishGuard">GitHub</a>
     </nav>
-    <div class="nav-cta">
-      <a class="btn ghost small" href="https://github.com/nikylogic/PhishGuard">
-        <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
-        GitHub
-      </a>
-      <a class="btn small" href="#download">Download</a>
-    </div>
+    <a class="pill" href="https://github.com/nikylogic/PhishGuard/releases/latest" data-dl>Download</a>
   </div>
 </header>
-
 <main id="main">
+<section class="hero">
+  <p class="kicker"><span class="dot"></span>Free link checker · no sign-up</p>
+  <h1>Look before<br>you <em>click.</em></h1>
 
-<section class="hero" id="top">
-  <div class="wrap hero-in">
-    <div class="hero-copy">
-      <p class="eyebrow"><span class="dot"></span> Free for personal use · Windows 10 and 11</p>
-      <h1>Every link waits in the airlock first.</h1>
-      <p class="lede">Click a link in WhatsApp, Discord, Outlook or a PDF, and PhishGuard opens it in a hidden, throwaway browser on your PC. It shows you what the page really is and why, and nothing reaches your real browser until <strong>you</strong> decide.</p>
-      <div class="hero-cta" id="download">
-        <a class="btn big" id="dl" href="https://github.com/nikylogic/PhishGuard/releases/latest">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5.5 10.5 4.5v7H3zm0 13 7.5 1v-7H3zm8.5 1.2L21 21v-8.5h-9.5zm0-15.4v7.2H21V3z"/></svg>
-          <span>Download for Windows</span>
-        </a>
-        <p class="dl-meta"><span id="dl-version">Latest release</span> · about 75 MB · no admin rights needed</p>
-      </div>
+  <form class="bar" id="check" role="search" autocomplete="off">
+    <label class="sr" for="link">Link to check</label>
+    <input id="link" name="link" type="text" inputmode="url" spellcheck="false" autocapitalize="off"
+           placeholder="Paste a link to check it" enterkeyhint="go">
+    <button type="submit" id="check-btn">Check link</button>
+  </form>
+  <p class="try">Try
+    <button type="button" data-try="hdfc-login-kyc.top/verify">hdfc-login-kyc.top</button>
+    <button type="button" data-try="http://paypa1.com/signin">paypa1.com</button>
+    <button type="button" data-try="https://en.wikipedia.org/wiki/Tea">wikipedia.org</button>
+  </p>
+  <p class="assure">Checked in your browser. The full link is never sent anywhere.
+    <a href="docs/link-checker.html">How it works</a></p>
+
+  <div class="hero-dl">
+    <a class="go" href="https://github.com/nikylogic/PhishGuard/releases/latest" data-dl>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5.5 10.5 4.5v7H3zm0 13 7.5 1v-7H3zm8.5 1.2L21 21v-8.5h-9.5zm0-15.4v7.2H21V3z"/></svg>
+      Download for Windows</a>
+    <span class="meta"><span data-version>Free</span> · checks every link before it opens</span>
+  </div>
+
+  <section class="history" id="history" hidden aria-labelledby="history-title">
+    <div class="history-head">
+      <h2 id="history-title">Your checks</h2>
+      <span class="meta">Saved only in this browser</span>
+      <button type="button" class="history-clear" id="history-clear">Clear</button>
     </div>
-    <figure class="hero-shot">
-      <div class="window">
-        <div class="window-bar"><span></span><span></span><span></span><em>PhishGuard · Airlock</em></div>
-        <img src="images/airlock-danger.png" width="2049" height="1152" alt="The Airlock window stopping a fake HDFC Bank login page: Danger, 100 out of 100, with the reasons listed">
-      </div>
-      <figcaption>A fake bank login, stopped in the sandbox. Every reason is written out.</figcaption>
-    </figure>
-  </div>
+    <ol class="history-list" id="history-list"></ol>
+  </section>
 </section>
 
-<section class="band">
-  <div class="wrap stats">
-    <div><b>0.23 s</b><span>trusted sites open straight away</span></div>
-    <div><b>2.4 s</b><span>from click to full verdict on a real site</span></div>
-    <div><b>63 / 63</b><span>attacks on PhishGuard itself stopped</span></div>
-    <div><b>100%</b><span>on your PC: no account, no cloud</span></div>
+<dialog class="report-dialog" id="report-dialog" aria-labelledby="rep-title">
+  <div class="dialog-bar">
+    <span class="meta">Link report</span>
+    <button type="button" class="dialog-copy" id="report-copy">Copy link to this report</button>
+    <button type="button" class="dialog-close" id="report-close" autofocus aria-label="Close the report">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
   </div>
+  <div id="report" aria-live="polite"></div>
+</dialog>
+
+<section class="numbers" aria-label="Measured results">
+  <div><b>0.23<small>s</small></b><span>to open a site you trust</span></div>
+  <div><b>2.4<small>s</small></b><span>for a full sandbox check</span></div>
+  <div><b>87<small>%</small></b><span>of brand-new phishing warned in testing</span></div>
+  <div><b>63<small>/63</small></b><span>attacks on PhishGuard itself stopped</span></div>
+  <a class="numbers-link" href="docs/results.html">How we measured →</a>
 </section>
 
-<section id="how" class="section">
-  <div class="wrap">
-    <p class="kicker">How it works</p>
-    <h2>Between the click and the browser.</h2>
-    <p class="sub">PhishGuard becomes your default browser, so links from other apps come to it first. Links you click inside your browser stay there.</p>
+<section class="app">
+  <div class="app-copy">
+    <p class="eyebrow">The Windows app</p>
+    <h2>Every link from your apps opens in a <em>hidden browser</em> first.</h2>
     <ol class="steps">
-      <li>
-        <span class="num">1</span>
-        <h3>You click a link</h3>
-        <p>Trusted sites open in your real browser at once. Everything else, and anything that is not a plain web link (<code>javascript:</code>, <code>ms-msdt:</code>), is held back.</p>
-      </li>
-      <li>
-        <span class="num">2</span>
-        <h3>The sandbox opens it</h3>
-        <p>A separate Chrome or Edge with a fresh profile: no cookies, no passwords, no files. A network gatekeeper keeps it away from your router and your PC. Downloads go to quarantine and never run.</p>
-      </li>
-      <li>
-        <span class="num">3</span>
-        <h3>You see the verdict</h3>
-        <p><span class="pill clear">Clear</span> <span class="pill caution">Caution</span> <span class="pill danger">Danger</span>, a screenshot and every reason in plain words. Open it, open a clean copy without tracking tags, keep it locked or block the site.</p>
-      </li>
+      <li><b>You click a link</b> in WhatsApp, Outlook, Discord or a PDF.</li>
+      <li><b>PhishGuard opens it</b> in a throwaway browser with no cookies, passwords or files.</li>
+      <li><b>You see the verdict</b> and every reason. Nothing opens until you say so.</li>
     </ol>
-  </div>
-</section>
-
-<section id="catches" class="section alt">
-  <div class="wrap">
-    <p class="kicker">What it catches</p>
-    <h2>Five independent checks. Any one can raise the alarm.</h2>
-    <div class="grid4">
-      <article class="card">
-        <div class="icon danger" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.4 3.4 8.3 8 9 4.6-.7 8-4.6 8-9V6z"/><path d="M9.5 9.5l5 5m0-5-5 5"/></svg></div>
-        <h3>Fake logins</h3>
-        <p>For 107 banks, payment apps and brands, a page that looks like the brand but is not on the brand's own domain is stopped, however the address is spelled.</p>
-      </article>
-      <article class="card">
-        <div class="icon danger" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 13h6M9 17h4"/></svg></div>
-        <h3>Malware downloads</h3>
-        <p>Every file is caught in quarantine and identified by its contents, so <code>invoice.pdf.exe</code> is exposed as a program. Nothing is ever run.</p>
-      </article>
-      <article class="card">
-        <div class="icon caution" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 2 20h20z"/><path d="M12 10v4m0 3h.01"/></svg></div>
-        <h3>Scams and traps</h3>
-        <p>Fake virus alerts, full-screen and keyboard traps, "ClickFix" copy-this-command pages, crypto-miners, and links that try to launch Windows tools.</p>
-      </article>
-      <article class="card">
-        <div class="icon info" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/></svg></div>
-        <h3>Tracking and AI tricks</h3>
-        <p>A privacy report of trackers and fingerprinting. AI Guard, a model trained for this project, finds hidden text written to fool AI assistants.</p>
-      </article>
-    </div>
-
-    <div class="split">
-      <div>
-        <h3 class="h3big">HDFC is never mistaken for HSBC.</h3>
-        <p>Spelling comparisons either miss fakes or flag real sites. PhishGuard asks a better question, following the research systems Phishpedia and PhishIntention: <em>which brand does this page claim to be, and is it on that brand's real website?</em></p>
-        <ul class="ticks">
-          <li>Copied favicons, logos, site names and titles reveal the claimed brand</li>
-          <li>Understands India's verified <code>.bank.in</code> and <code>.gov.in</code> zones</li>
-          <li>Free hosting (vercel.app, pages.dev, blogspot…) is never trusted as a brand</li>
-          <li>About 380,000 reported phishing domains, checked on your PC, refreshed every 6 hours</li>
-          <li>Brand-new domains are flagged through RDAP and certificate history</li>
-        </ul>
-      </div>
-      <figure class="shot">
-        <img src="images/airlock-download.png" width="2049" height="1152" loading="lazy" alt="Airlock showing invoice.pdf.exe caught in quarantine and identified as a Windows program">
-        <figcaption>A disguised program caught in quarantine.</figcaption>
-      </figure>
+    <div class="cta-row">
+      <a class="go" href="https://github.com/nikylogic/PhishGuard/releases/latest" data-dl>Download for Windows</a>
+      <span class="meta"><span data-version>Free</span> · Windows 10 &amp; 11 · no admin rights</span>
     </div>
   </div>
+  <figure class="shot">
+    <img src="images/airlock-danger.png" width="2049" height="1152" loading="lazy"
+         alt="PhishGuard stopping a fake HDFC Bank login page and listing why">
+    <figcaption>A fake bank login, stopped in the sandbox. Every reason is written out.</figcaption>
+  </figure>
 </section>
 
-<section class="section" id="screens">
-  <div class="wrap">
-    <p class="kicker">The app</p>
-    <h2>Looks like Windows. Explains itself.</h2>
-    <div class="tabs" role="tablist" aria-label="Screenshots">
-      <button role="tab" aria-selected="true" aria-controls="shot-panel" data-src="images/airlock-clear.png" data-alt="Airlock showing a real site, Wikipedia, as Clear" data-cap="A real site: Clear, with the screenshot and the privacy report.">Clear</button>
-      <button role="tab" aria-selected="false" aria-controls="shot-panel" data-src="images/airlock-danger.png" data-alt="Airlock stopping a fake bank login" data-cap="A fake bank login: Danger, and exactly why.">Danger</button>
-      <button role="tab" aria-selected="false" aria-controls="shot-panel" data-src="images/dashboard.png" data-alt="Dashboard with today's checks and a chart" data-cap="The dashboard: every check, what was stopped and when.">Dashboard</button>
-      <button role="tab" aria-selected="false" aria-controls="shot-panel" data-src="images/settings.png" data-alt="Settings: start with Windows, default browser, real browser" data-cap="Settings: start with Windows, default browser, your real browser, updates.">Settings</button>
-    </div>
-    <figure class="shot wide" id="shot-panel" role="tabpanel">
-      <img id="shot-img" src="images/airlock-clear.png" width="2049" height="1152" loading="lazy" alt="Airlock showing a real site, Wikipedia, as Clear">
-      <figcaption id="shot-cap">A real site: Clear, with the screenshot and the privacy report.</figcaption>
-    </figure>
-  </div>
+<section class="kills">
+  <p class="strike">Fake logins.</p>
+  <p class="strike">Disguised files.</p>
+  <p class="strike">Scam pop-ups.</p>
+  <p class="after">Stopped before they load. <a href="docs/detection.html">See every check</a></p>
 </section>
 
-<section id="proof" class="section alt">
-  <div class="wrap">
-    <p class="kicker">Proof, not promises</p>
-    <h2>Tested on live phishing and attacked on purpose.</h2>
-    <div class="grid3">
-      <article class="card num-card">
-        <b>87%</b>
-        <h3>of brand-new phishing warned</h3>
-        <p>On a held-out batch of 71 live phishing pages, without using the phishing lists at all: the case of a site nobody has reported yet. Real sites wrongly warned: 0–5%.</p>
-      </article>
-      <article class="card num-card">
-        <b>63 / 63</b>
-        <h3>attacks on PhishGuard stopped</h3>
-        <p>DNS rebinding, cross-site requests, SQL injection, path traversal, links that point back at your PC, script injection in a real Chrome window, sandbox escapes, password guessing.</p>
-      </article>
-      <article class="card num-card">
-        <b>552</b>
-        <h3>automated tests</h3>
-        <p>Run on Windows for every change. The raw output, timings and every miss are published in the repository's <code>proof/</code> folder.</p>
-      </article>
-    </div>
-    <p class="note">Samples are small (60–110 pages per group), so each detection figure is uncertain by about ±10 points. <a href="https://github.com/nikylogic/PhishGuard/tree/main/proof">See the evidence</a>.</p>
-  </div>
+<section class="local">
+  <h2>Nothing leaves<br>your <em>PC.</em></h2>
+  <ul class="ticks">
+    <li>No account, no cloud. History stays in your Windows user folder.</li>
+    <li>Phishing lists are downloaded and checked on your PC.</li>
+    <li>Updates install only with PhishGuard's digital signature.</li>
+  </ul>
+  <a class="more" href="docs/privacy.html">Read the privacy details →</a>
 </section>
 
-<section id="privacy" class="section">
-  <div class="wrap split">
-    <div>
-      <p class="kicker">Privacy and safety</p>
-      <h2>Your links never leave your PC.</h2>
-      <ul class="ticks">
-        <li><strong>Everything runs locally.</strong> History, screenshots and settings stay in your own Windows user folder.</li>
-        <li><strong>Phishing lists are downloaded</strong> and checked on your PC; your links are never sent to a lookup service.</li>
-        <li><strong>Website age lookups send only the domain name</strong>, never the full link.</li>
-        <li><strong>The AI second opinion is off by default</strong>, and when on it can only raise the risk, never lower it.</li>
-        <li><strong>Hide my IP</strong> (optional) checks sites through Tor, Cloudflare WARP or your own proxy.</li>
-        <li><strong>Signed automatic updates.</strong> An update installs only if it carries PhishGuard's digital signature; a tampered installer is refused.</li>
-      </ul>
-    </div>
-    <div class="card code-card">
-      <p class="code-title">If anything fails, the link stays closed.</p>
-      <pre><code><span class="c"># the engine listens on this PC only</span>
-listen     127.0.0.1
-requests   CSRF token · host and origin checked
-pages      strict Content-Security-Policy
-sandbox    fresh profile · 20 s limit
-network    private addresses refused
-downloads  quarantined · never run
-updates    Ed25519 signature required</code></pre>
-    </div>
-  </div>
-</section>
-
-<section class="section alt" id="install">
-  <div class="wrap">
-    <p class="kicker">Install</p>
-    <h2>Two minutes, no admin rights.</h2>
-    <ol class="steps four">
-      <li><span class="num">1</span><h3>Download</h3><p>Get <span class="mono" id="dl-file">PhishGuard-Setup.exe</span> from the <a href="https://github.com/nikylogic/PhishGuard/releases/latest">latest release</a> and run it.</p></li>
-      <li><span class="num">2</span><h3>Make it your default</h3><p>Open PhishGuard, then Settings → General → <em>Make PhishGuard my default browser</em>. Windows asks you to confirm.</p></li>
-      <li><span class="num">3</span><h3>Pick your real browser</h3><p>Chrome, Edge, Brave or Firefox. Safe links open there, directly.</p></li>
-      <li><span class="num">4</span><h3>Forget about it</h3><p>PhishGuard starts quietly with Windows, sits next to the clock, and updates itself.</p></li>
-    </ol>
-    <p class="note"><strong>Windows SmartScreen</strong> may say the installer is from an unknown publisher, because it is not code-signed yet. Choose <em>More info → Run anyway</em>, or build it yourself from the source code. Google Chrome or Microsoft Edge must be installed (Windows 11 includes Edge).</p>
-  </div>
-</section>
-
-<section class="section" id="faq">
-  <div class="wrap narrow">
-    <p class="kicker">Questions</p>
-    <h2>Good to know.</h2>
-    <details>
-      <summary>Is it really free?</summary>
-      <p>Yes, for personal use and for noncommercial organisations such as schools, charities and public bodies, under the PolyForm Noncommercial License 1.0.0. Using it in or for a business needs a commercial license. The full source code is on GitHub.</p>
-    </details>
-    <details>
-      <summary>Does it replace my antivirus?</summary>
-      <p>No. Antivirus protects files and programs on your PC. PhishGuard protects the moment you click a link from another app, before the page reaches your real browser. They work well together.</p>
-    </details>
-    <details>
-      <summary>Will it slow me down?</summary>
-      <p>Sites on your trusted list open in about a quarter of a second. A full check of an unknown site, with the screenshot, usually takes two to three seconds, and you can trust a site with one click.</p>
-    </details>
-    <details>
-      <summary>Which links does it check?</summary>
-      <p>Links you click in other apps: messengers, e-mail programs, PDFs, documents, games. Links you click inside your browser stay in your browser; you can paste any link into PhishGuard to check it too.</p>
-    </details>
-    <details>
-      <summary>Can several people use it on one PC?</summary>
-      <p>Yes. Choose <em>Several people</em> on first start: each person signs in, and admins and analysts get different rights. Every change is written to an audit log.</p>
-    </details>
-    <details>
-      <summary>How do updates work?</summary>
-      <p>PhishGuard looks for a new release twice a day, downloads it, checks its digital signature and fingerprint, and installs it silently when no link is being checked. Your history and settings are kept. You can choose to be asked first, or turn updates off.</p>
-    </details>
-  </div>
-</section>
-
-<section class="cta-band">
-  <div class="wrap cta-in">
-    <h2>Stop the next fake login before it loads.</h2>
-    <a class="btn big light" href="https://github.com/nikylogic/PhishGuard/releases/latest" id="dl2">Download for Windows</a>
+<section class="faq">
+  <h2>Questions</h2>
+  <div class="qa">
+    <details><summary>How do I check if a link is safe?</summary>
+      <p>Paste it in the box above. It checks the address with the same rules as the Windows app, looks it up in about 380,000 reported phishing domains, and asks the registry how old the website is.</p></details>
+    <details><summary>Is my link sent to a server?</summary>
+      <p>No. The check runs in your browser. Only the domain name goes to its official registry, to read the website's age.</p></details>
+    <details><summary>What does the Windows app do that the website cannot?</summary>
+      <p>It opens the page itself in a hidden browser first, so it also catches fake login forms, malware downloads and fake virus alerts.</p></details>
+    <details><summary>Is PhishGuard free?</summary>
+      <p>Yes, for personal use and for non-profits. The full source code is on GitHub.</p></details>
+    <details><summary>Does it replace my antivirus?</summary>
+      <p>No, keep both. Antivirus guards your files; PhishGuard guards the click.</p></details>
   </div>
 </section>
 
 </main>
-
-<footer class="footer">
-  <div class="wrap foot-in">
-    <div class="brand"><img src="favicon.svg" alt="" width="22" height="22"><span>PhishGuard</span></div>
-    <p>Made by Nikhil P. Source-available under the <a href="https://github.com/nikylogic/PhishGuard/blob/main/LICENSE">PolyForm Noncommercial License</a>.</p>
-    <nav aria-label="Project links">
+<footer class="foot">
+  <div class="foot-in">
+    <div class="foot-brand">
+      <a class="brand" href="./"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="6.4" fill="#171717"/><path d="M16 6.4 25.6 9.6V16L16 26.24 6.4 16V9.6Z" fill="none" stroke="#fff" stroke-width="2"/><path d="M12.16 16 15.04 18.88 20.16 13.12" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>PhishGuard</span></a>
+      <p>A link airlock for Windows. Every link from your apps opens in a hidden browser first.</p>
+      <a class="go small" href="https://github.com/nikylogic/PhishGuard/releases/latest" data-dl>Download for Windows</a>
+    </div>
+    <nav aria-label="Docs"><h2>Docs</h2><a href="docs/">Getting started</a><a href="docs/how-it-works.html">How it works</a><a href="docs/detection.html">What it detects</a><a href="docs/link-checker.html">The web link checker</a><a href="docs/privacy.html">Privacy</a><a href="docs/updates.html">Updates</a><a href="docs/results.html">Test results</a></nav>
+    <nav aria-label="Project"><h2>Project</h2>
+      <a href="./">Free link checker</a>
+      <a href="guides/spot-a-phishing-link.html">Spot a phishing link</a>
       <a href="https://github.com/nikylogic/PhishGuard">Source code</a>
       <a href="https://github.com/nikylogic/PhishGuard/releases">Releases</a>
-      <a href="https://github.com/nikylogic/PhishGuard/security">Security</a>
       <a href="https://github.com/nikylogic/PhishGuard/issues/new/choose">Report a miss</a>
+      <a href="https://github.com/nikylogic/PhishGuard/security">Security</a>
     </nav>
   </div>
+  <p class="fine">Made by Nikhil P · Free for personal use under the
+    <a href="https://github.com/nikylogic/PhishGuard/blob/main/LICENSE">PolyForm Noncommercial License</a> · Version 1.1.1</p>
 </footer>
-
+<script src="checker.js" defer></script>
 <script src="main.js" defer></script>
 </body>
 </html>

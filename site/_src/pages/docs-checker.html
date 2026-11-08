@@ -1,0 +1,34 @@
+<!--page {
+  "path": "docs/link-checker.html", "kind": "doc", "nav": "The web link checker", "order": 4,
+  "title": "How the free link checker works, and what it cannot see · Docs",
+  "h1": "The web link checker",
+  "lead": "The checker on the home page runs PhishGuard's address rules in your browser. Here is exactly what it checks, what it sends where, and what only the Windows app can catch.",
+  "description": "How the free link checker works: address rules, 380,000 reported phishing domains and the site's age, checked in your browser without sending the link."
+} -->
+<h2>What it checks</h2>
+<ol class="numbered">
+  <li><b>The address</b>, with the same rules as the Windows app: look-alike brand names, a brand name on someone else's domain, risky domain endings, hidden <code>@</code> tricks, link shorteners, IP-logger links, bait words and more. Every rule is on <a href="{{root}}docs/detection.html#rules-on-the-address">What it detects</a>.</li>
+  <li><b>The public phishing lists</b>: about 380,000 reported phishing domains and addresses from phishunt.io and Phishing.Database, refreshed every 6 hours.</li>
+  <li><b>The website's age</b>, from the domain's official registry. A site registered in the last 30 days adds points; a domain nobody has registered means the link is dead.</li>
+</ol>
+
+<h2>What it sends, and where</h2>
+<ul>
+  <li><b>The full link never leaves your browser.</b> The rules run on your device.</li>
+  <li><b>Phishing lists:</b> your browser computes a fingerprint (SHA-256) of the address and downloads one of 256 small files, picked by the first two characters of that fingerprint. The file is the same for thousands of addresses, so it reveals nothing about yours. The lists are stored as fingerprints too, so this site never publishes live phishing links.</li>
+  <li><b>Website age:</b> only the domain name, such as <code>example.com</code>, goes to the official registry for its ending, found through IANA's public directory. Well-known sites, brands' own domains and free hosting are never looked up.</li>
+  <li><b>Sharing a result</b> gives a link ending in <code>#check=…</code>. The part after <code>#</code> stays in the browser and never reaches the web server.</li>
+</ul>
+
+<h2>Same rules as the app</h2>
+<p>The checker is a direct port of the engine's address rules, fed with data the engine exports on every deploy. An automated test runs 65 links through both, from fake banks to Cyrillic look-alikes and <code>javascript:</code> links, and requires the same findings, words and score.</p>
+
+<h2>What only the Windows app can see</h2>
+<p>An address shows where a link goes, not what the page does. The checker cannot see:</p>
+<ul>
+  <li>a fake login form on an address that looks harmless;</li>
+  <li>a malware download, or a file whose name lies about what it is;</li>
+  <li>fake virus alerts, keyboard traps, "copy this command" scams and crypto-miners;</li>
+  <li>redirects that only happen when the page loads.</li>
+</ul>
+<p>The <a href="{{root}}docs/">Windows app</a> opens the page itself in a hidden browser, so it catches all of these too. A <b>Clear</b> result here means the address shows no warning signs; it is not a promise that the page is safe.</p>

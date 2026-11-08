@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How the free link checker works, and what it cannot see · Docs</title>
+<meta name="description" content="How the free link checker works: address rules, 380,000 reported phishing domains and the site&#x27;s age, checked in your browser without sending the link.">
+<link rel="canonical" href="https://nikylogic.github.io/PhishGuard/docs/link-checker.html">
+<meta name="theme-color" content="#f5f1e8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12110e" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="PhishGuard">
+<meta property="og:title" content="How the free link checker works, and what it cannot see · Docs">
+<meta property="og:description" content="How the free link checker works: address rules, 380,000 reported phishing domains and the site&#x27;s age, checked in your browser without sending the link.">
+<meta property="og:url" content="https://nikylogic.github.io/PhishGuard/docs/link-checker.html">
+<meta property="og:image" content="https://nikylogic.github.io/PhishGuard/images/airlock-danger.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="preload" href="../fonts/instrument-serif.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../fonts/plex-sans.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../style.css">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "PhishGuard", "item": "https://nikylogic.github.io/PhishGuard/"}, {"@type": "ListItem", "position": 2, "name": "Docs", "item": "https://nikylogic.github.io/PhishGuard/docs/"}, {"@type": "ListItem", "position": 3, "name": "The web link checker", "item": "https://nikylogic.github.io/PhishGuard/docs/link-checker.html"}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "TechArticle", "headline": "The web link checker", "description": "How the free link checker works: address rules, 380,000 reported phishing domains and the site's age, checked in your browser without sending the link.", "url": "https://nikylogic.github.io/PhishGuard/docs/link-checker.html", "author": {"@type": "Person", "name": "Nikhil P"}, "image": "https://nikylogic.github.io/PhishGuard/images/airlock-danger.png", "publisher": {"@type": "Organization", "name": "PhishGuard", "url": "https://nikylogic.github.io/PhishGuard/"}}</script>
+</head>
+<body class="doc">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href=".././"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="6.4" fill="#171717"/><path d="M16 6.4 25.6 9.6V16L16 26.24 6.4 16V9.6Z" fill="none" stroke="#fff" stroke-width="2"/><path d="M12.16 16 15.04 18.88 20.16 13.12" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>PhishGuard</span></a>
+    <nav aria-label="Main">
+      <a href=".././">Link checker</a>
+      <a href="../docs/" aria-current="page">Docs</a>
+      <a href="../guides/spot-a-phishing-link.html">Guide</a>
+      <a href="https://github.com/nikylogic/PhishGuard">GitHub</a>
+    </nav>
+    <a class="pill" href="https://github.com/nikylogic/PhishGuard/releases/latest" data-dl>Download</a>
+  </div>
+</header>
+<main id="main">
+<div class="doc-wrap with-side">
+  <nav class="side" aria-label="Docs"><a href="../docs/">Getting started</a><a href="../docs/how-it-works.html">How it works</a><a href="../docs/detection.html">What it detects</a><a href="../docs/link-checker.html" aria-current="page">The web link checker</a><a href="../docs/privacy.html">Privacy</a><a href="../docs/updates.html">Updates</a><a href="../docs/results.html">Test results</a></nav>
+  <article class="prose">
+    <p class="crumbs"><a href=".././">Home</a> <span>/</span> <a href="../docs/">Docs</a></p>
+    <h1>The web link checker</h1>
+    <p class="lead">The checker on the home page runs PhishGuard's address rules in your browser. Here is exactly what it checks, what it sends where, and what only the Windows app can catch.</p>
+    <h2 id="what-it-checks">What it checks</h2>
+<ol class="numbered">
+  <li><b>The address</b>, with the same rules as the Windows app: look-alike brand names, a brand name on someone else's domain, risky domain endings, hidden <code>@</code> tricks, link shorteners, IP-logger links, bait words and more. Every rule is on <a href="../docs/detection.html#rules-on-the-address">What it detects</a>.</li>
+  <li><b>The public phishing lists</b>: about 380,000 reported phishing domains and addresses from phishunt.io and Phishing.Database, refreshed every 6 hours.</li>
+  <li><b>The website's age</b>, from the domain's official registry. A site registered in the last 30 days adds points; a domain nobody has registered means the link is dead.</li>
+</ol>
+
+<h2 id="what-it-sends-and-where">What it sends, and where</h2>
+<ul>
+  <li><b>The full link never leaves your browser.</b> The rules run on your device.</li>
+  <li><b>Phishing lists:</b> your browser computes a fingerprint (SHA-256) of the address and downloads one of 256 small files, picked by the first two characters of that fingerprint. The file is the same for thousands of addresses, so it reveals nothing about yours. The lists are stored as fingerprints too, so this site never publishes live phishing links.</li>
+  <li><b>Website age:</b> only the domain name, such as <code>example.com</code>, goes to the official registry for its ending, found through IANA's public directory. Well-known sites, brands' own domains and free hosting are never looked up.</li>
+  <li><b>Sharing a result</b> gives a link ending in <code>#check=…</code>. The part after <code>#</code> stays in the browser and never reaches the web server.</li>
+</ul>
+
+<h2 id="same-rules-as-the-app">Same rules as the app</h2>
+<p>The checker is a direct port of the engine's address rules, fed with data the engine exports on every deploy. An automated test runs 65 links through both, from fake banks to Cyrillic look-alikes and <code>javascript:</code> links, and requires the same findings, words and score.</p>
+
+<h2 id="what-only-the-windows-app-can-see">What only the Windows app can see</h2>
+<p>An address shows where a link goes, not what the page does. The checker cannot see:</p>
+<ul>
+  <li>a fake login form on an address that looks harmless;</li>
+  <li>a malware download, or a file whose name lies about what it is;</li>
+  <li>fake virus alerts, keyboard traps, "copy this command" scams and crypto-miners;</li>
+  <li>redirects that only happen when the page loads.</li>
+</ul>
+<p>The <a href="../docs/">Windows app</a> opens the page itself in a hidden browser, so it catches all of these too. A <b>Clear</b> result here means the address shows no warning signs; it is not a promise that the page is safe.</p>
+
+    <nav class="pager" aria-label="More docs"><a class="prev" href="../docs/detection.html"><span>Previous</span>What it detects</a><a class="next" href="../docs/privacy.html"><span>Next</span>Privacy</a></nav>
+  </article>
+  <nav class="toc" aria-label="On this page"><h2>On this page</h2><a href="#what-it-checks">What it checks</a><a href="#what-it-sends-and-where">What it sends, and where</a><a href="#same-rules-as-the-app">Same rules as the app</a><a href="#what-only-the-windows-app-can-see">What only the Windows app can see</a></nav>
+</div>
+</main>
+<footer class="foot">
+  <div class="foot-in">
+    <div class="foot-brand">
+      <a class="brand" href=".././"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="6.4" fill="#171717"/><path d="M16 6.4 25.6 9.6V16L16 26.24 6.4 16V9.6Z" fill="none" stroke="#fff" stroke-width="2"/><path d="M12.16 16 15.04 18.88 20.16 13.12" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>PhishGuard</span></a>
+      <p>A link airlock for Windows. Every link from your apps opens in a hidden browser first.</p>
+      <a class="go small" href="https://github.com/nikylogic/PhishGuard/releases/latest" data-dl>Download for Windows</a>
+    </div>
+    <nav aria-label="Docs"><h2>Docs</h2><a href="../docs/">Getting started</a><a href="../docs/how-it-works.html">How it works</a><a href="../docs/detection.html">What it detects</a><a href="../docs/link-checker.html">The web link checker</a><a href="../docs/privacy.html">Privacy</a><a href="../docs/updates.html">Updates</a><a href="../docs/results.html">Test results</a></nav>
+    <nav aria-label="Project"><h2>Project</h2>
+      <a href=".././">Free link checker</a>
+      <a href="../guides/spot-a-phishing-link.html">Spot a phishing link</a>
+      <a href="https://github.com/nikylogic/PhishGuard">Source code</a>
+      <a href="https://github.com/nikylogic/PhishGuard/releases">Releases</a>
+      <a href="https://github.com/nikylogic/PhishGuard/issues/new/choose">Report a miss</a>
+      <a href="https://github.com/nikylogic/PhishGuard/security">Security</a>
+    </nav>
+  </div>
+  <p class="fine">Made by Nikhil P · Free for personal use under the
+    <a href="https://github.com/nikylogic/PhishGuard/blob/main/LICENSE">PolyForm Noncommercial License</a> · Version 1.1.1</p>
+</footer>
+<script src="../main.js" defer></script>
+</body>
+</html>
