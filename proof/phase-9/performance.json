@@ -1,0 +1,160 @@
+{
+  "URL verdict (rules only, per link)": {
+    "name": "URL verdict (rules only, per link)",
+    "unit": "ms",
+    "runs": 20,
+    "median": 0.43488999999681255,
+    "min": 0.43232999996689614,
+    "max": 0.4548099999738042,
+    "p90": 0.4405399999086512,
+    "target": "< 50 ms",
+    "note": "10 different links, from plain to lookalike; slowest link median 1.53 ms."
+  },
+  "AI Guard model load": {
+    "name": "AI Guard model load",
+    "unit": "s",
+    "runs": 5,
+    "median": 0.42844870000044466,
+    "min": 0.40879429999949934,
+    "max": 1.8869183999995585,
+    "p90": 1.8869183999995585,
+    "target": "",
+    "note": "Model file 1.32 MB, loaded once at start-up."
+  },
+  "AI Guard check, short clean": {
+    "name": "AI Guard check, short clean",
+    "unit": "ms",
+    "runs": 20,
+    "median": 1.3695999996343744,
+    "min": 1.283999999941443,
+    "max": 2.010200001677731,
+    "p90": 1.6983999994408805,
+    "target": "< 5 ms",
+    "note": "verdict: clean (0.02)"
+  },
+  "AI Guard check, short injection": {
+    "name": "AI Guard check, short injection",
+    "unit": "ms",
+    "runs": 20,
+    "median": 2.512300000489631,
+    "min": 2.431799999612849,
+    "max": 3.588300000046729,
+    "p90": 2.7268000012554694,
+    "target": "< 5 ms",
+    "note": "verdict: injection (1.00)"
+  },
+  "AI Guard check, page-sized (4,000 chars)": {
+    "name": "AI Guard check, page-sized (4,000 chars)",
+    "unit": "ms",
+    "runs": 20,
+    "median": 5.953949999820907,
+    "min": 5.884399999558809,
+    "max": 6.15519999882963,
+    "p90": 6.037299999661627,
+    "target": "",
+    "note": "12 chunks of up to 400 characters, about 0.50 ms per chunk; verdict: clean (0.02)"
+  },
+  "AI Guard check, per chunk of a long page": {
+    "name": "AI Guard check, per chunk of a long page",
+    "unit": "ms",
+    "runs": 20,
+    "median": 0.49616249998507556,
+    "min": 0.49036666662990075,
+    "max": 0.5129333332358025,
+    "p90": 0.5031083333051356,
+    "target": "< 5 ms",
+    "note": "The page-sized row divided by its number of chunks."
+  },
+  "Trusted link, from source (python)": {
+    "name": "Trusted link, from source (python)",
+    "unit": "s",
+    "runs": 20,
+    "median": 0.0933291499986808,
+    "min": 0.09172969999963243,
+    "max": 0.09446459999890067,
+    "p90": 0.0940958999999566,
+    "target": "< 0.3 s",
+    "note": "Whole process: start, check the link, read the trusted list, start the browser."
+  },
+  "Trusted link, installed PhishGuard.exe": {
+    "name": "Trusted link, installed PhishGuard.exe",
+    "unit": "s",
+    "runs": 20,
+    "median": 0.2287493000003451,
+    "min": 0.20522629999868514,
+    "max": 0.24612750000051165,
+    "p90": 0.2435602999994444,
+    "target": "< 0.3 s",
+    "note": "Whole process: start, check the link, read the trusted list, start the browser."
+  },
+  "Sandbox browser launch (once per session)": {
+    "name": "Sandbox browser launch (once per session)",
+    "unit": "s",
+    "runs": 1,
+    "median": 0.5072087999997166,
+    "min": 0.5072087999997166,
+    "max": 0.5072087999997166,
+    "p90": 0.5072087999997166,
+    "target": "",
+    "note": "Headless Chrome or Edge with a throwaway profile; kept warm afterwards."
+  },
+  "Sandbox capture, real site (warm browser)": {
+    "name": "Sandbox capture, real site (warm browser)",
+    "unit": "s",
+    "runs": 20,
+    "median": 2.2525612499994168,
+    "min": 1.7984949000001507,
+    "max": 3.42464530000143,
+    "p90": 3.2645312000004196,
+    "target": "3-8 s typical, 20 s hard limit",
+    "note": "20/20 complete captures across example.com, www.wikipedia.org, www.python.org, github.com, www.bbc.com."
+  },
+  "_sandbox_phases": {
+    "navigate": 0.516,
+    "total": 2.25
+  },
+  "Cold start, from source": {
+    "name": "Cold start, from source",
+    "unit": "s",
+    "runs": 20,
+    "median": 0.7323645999995279,
+    "min": 0.7159139000013965,
+    "max": 1.1276914000009128,
+    "p90": 1.0785378000000492,
+    "target": "",
+    "note": "Fresh data folder each time: database created, server answering /health."
+  },
+  "Cold start, installed PhishGuardEngine.exe": {
+    "name": "Cold start, installed PhishGuardEngine.exe",
+    "unit": "s",
+    "runs": 20,
+    "median": 0.72901340000044,
+    "min": 0.7248292000003858,
+    "max": 0.7550810000011552,
+    "p90": 0.7434278000000631,
+    "target": "",
+    "note": "Fresh data folder each time: database created, server answering /health."
+  },
+  "Link accepted by the engine (POST /api/scan)": {
+    "name": "Link accepted by the engine (POST /api/scan)",
+    "unit": "ms",
+    "runs": 20,
+    "median": 30.855199999678007,
+    "min": 17.356899999867892,
+    "max": 59.96950000007928,
+    "p90": 57.49959999957355,
+    "target": "",
+    "note": "URL rules + database write; the Airlock window can open now."
+  },
+  "Click to full verdict, real site": {
+    "name": "Click to full verdict, real site",
+    "unit": "s",
+    "runs": 20,
+    "median": 2.356416500000705,
+    "min": 1.8231586999991123,
+    "max": 3.3734896999994817,
+    "p90": 3.331836100000146,
+    "target": "",
+    "note": "Sandbox + page rules + phishing lists + domain age + identity + AI Guard. Verdicts: clear 20"
+  }
+}

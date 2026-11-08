@@ -31,7 +31,7 @@ from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parent.parent
 HOST = "127.0.0.1"
-NOT_A_BROWSER = {"python.exe", "pythonw.exe", "py.exe", "pyw.exe"}
+NOT_A_BROWSER = {"python.exe", "pythonw.exe", "py.exe", "pyw.exe", "phishguard.exe", "phishguardengine.exe"}
 CHROMIUM = ("chrome", "msedge", "brave")
 START_TIMEOUT = 30.0       # first start loads the AI Guard model and the sandbox browser
 BACKGROUND_TIMEOUT = 120.0  # at sign-in the PC is busy; there is no one waiting
@@ -70,6 +70,11 @@ def log(cfg: dict, line: str) -> None:
 def check_link(raw: str) -> tuple[str, str]:
     """Return (url, host) for an http(s) link, or raise Refused."""
     url = (raw or "").strip().strip('"')
+    # Browsers read "\" as "/" before the ? or #: https://evil.example\@bank.com/ opens evil.example.
+    # Judge (and pass on) the link exactly as the browser will read it, or a trusted name after a
+    # backslash would skip the check. Same rule as phishguard/urltools.py browser_slashes().
+    cut = min((i for i in (url.find("?"), url.find("#")) if i >= 0), default=len(url))
+    url = url[:cut].replace("\\", "/") + url[cut:]
     if not url:
         raise Refused("There was no link.")
     # Spaces, control characters and invisible "format" characters (zero-width spaces, right-to-left

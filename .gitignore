@@ -12,3 +12,6 @@ build-log.txt
 build-iss.txt
 benchmark-data/
 benchmark-data-collect*.log
+
+# College project report (personal details; built locally)
+report/
