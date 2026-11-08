@@ -1,65 +1,56 @@
-// Point the download buttons straight at the latest installer, switch the tabs, and remember the theme.
+// Download links point at the latest installer; the address bar types example links and shows each verdict.
 (() => {
-  const RELEASE = "https://api.github.com/repos/nikylogic/PhishGuard/releases/latest"
-
-  fetch(RELEASE, { headers: { Accept: "application/vnd.github+json" } })
+  fetch("https://api.github.com/repos/nikylogic/PhishGuard/releases/latest", { headers: { Accept: "application/vnd.github+json" } })
     .then((r) => (r.ok ? r.json() : null))
     .then((rel) => {
-      if (!rel) return
-      const exe = (rel.assets || []).find((a) => /^PhishGuard-Setup-[\d.]+\.exe$/.test(a.name))
+      const exe = rel && (rel.assets || []).find((a) => /^PhishGuard-Setup-[\d.]+\.exe$/.test(a.name))
       if (!exe) return
-      const mb = Math.round(exe.size / 1048576)
-      for (const id of ["dl", "dl2"]) {
+      for (const id of ["dl", "dl2", "dl3"]) {
         const a = document.getElementById(id)
         if (a) a.href = exe.browser_download_url
       }
       const v = document.getElementById("dl-version")
-      if (v) v.textContent = `Version ${rel.tag_name.replace(/^v/, "")}`
-      const meta = document.querySelector(".dl-meta")
-      if (meta) meta.innerHTML = meta.innerHTML.replace(/about \d+ MB/, `${mb} MB`)
-      const f = document.getElementById("dl-file")
-      if (f) f.textContent = exe.name
+      if (v) v.textContent = `Free · v${rel.tag_name.replace(/^v/, "")}`
     })
-    .catch(() => {}) // the buttons already lead to the releases page
+    .catch(() => {}) // the links already lead to the releases page
 
-  // A row of role="tab" buttons; `show(button)` does the switching. Arrow keys move along the row.
-  function tablist(buttons, show) {
-    buttons.forEach((b, i) => {
-      b.addEventListener("click", () => {
-        buttons.forEach((t) => {
-          t.setAttribute("aria-selected", String(t === b))
-          t.tabIndex = t === b ? 0 : -1
-        })
-        show(b)
-      })
-      b.addEventListener("keydown", (e) => {
-        if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return
-        const next = buttons[(i + (e.key === "ArrowRight" ? 1 : buttons.length - 1)) % buttons.length]
-        next.focus()
-        next.click()
-      })
-    })
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches
+
+  // The strike-through lines draw themselves when they scroll into view.
+  const lines = document.querySelectorAll(".strike")
+  if (still || !("IntersectionObserver" in window)) lines.forEach((l) => l.classList.add("in"))
+  else {
+    const io = new IntersectionObserver((seen) => {
+      for (const s of seen) if (s.isIntersecting) { s.target.classList.add("in"); io.unobserve(s.target) }
+    }, { threshold: 0.6 })
+    lines.forEach((l) => io.observe(l))
   }
 
-  const img = document.getElementById("shot-img")
-  const cap = document.getElementById("shot-cap")
-  tablist([...document.querySelectorAll(".tabs button")], (b) => {
-    img.src = b.dataset.src
-    img.alt = b.dataset.alt
-    cap.textContent = b.dataset.cap
-  })
+  if (still) return
+  const url = document.getElementById("url")
+  const verdict = document.getElementById("verdict")
+  const examples = [
+    ["hdfc-login-kyc.top/verify", "bad", "Fake. Stopped."],
+    ["en.wikipedia.org/wiki/Tea", "ok", "Real. Opened."],
+    ["files-share.example/invoice.pdf.exe", "hold", "Hidden program. Held."],
+    ["paypal.com-secure-help.site", "bad", "Fake. Stopped."],
+    ["github.com/nikylogic", "ok", "Real. Opened."],
+  ]
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms))
+  const show = (kind, text) => { verdict.className = `verdict ${kind}`; verdict.textContent = text }
 
-  const logs = [...document.querySelectorAll(".term-tabs button")]
-  tablist(logs, (b) => {
-    for (const t of logs) document.getElementById(t.getAttribute("aria-controls")).hidden = t !== b
-  })
-
-  const root = document.documentElement
-  document.querySelector(".theme")?.addEventListener("click", () => {
-    const dark = root.dataset.theme
-      ? root.dataset.theme === "dark"
-      : matchMedia("(prefers-color-scheme: dark)").matches
-    root.dataset.theme = dark ? "light" : "dark"
-    try { localStorage.setItem("pg-theme", root.dataset.theme) } catch (e) {}
-  })
+  ;(async () => {
+    let i = 0
+    await wait(2600)
+    for (;;) {
+      i = (i + 1) % examples.length
+      const [link, kind, text] = examples[i]
+      for (let n = url.textContent.length; n >= 0; n -= 2) { url.textContent = url.textContent.slice(0, n); await wait(14) }
+      show("wait", "Checking…")
+      for (let n = 1; n <= link.length; n++) { url.textContent = link.slice(0, n); await wait(38) }
+      await wait(900)
+      show(kind, text)
+      await wait(2600)
+    }
+  })()
 })()
