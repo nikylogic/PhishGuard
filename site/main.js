@@ -1,4 +1,4 @@
-// Point the download buttons straight at the latest installer, and switch screenshots.
+// Point the download buttons straight at the latest installer, switch the tabs, and remember the theme.
 (() => {
   const RELEASE = "https://api.github.com/repos/nikylogic/PhishGuard/releases/latest"
 
@@ -22,21 +22,44 @@
     })
     .catch(() => {}) // the buttons already lead to the releases page
 
-  const tabs = document.querySelectorAll(".tabs button")
+  // A row of role="tab" buttons; `show(button)` does the switching. Arrow keys move along the row.
+  function tablist(buttons, show) {
+    buttons.forEach((b, i) => {
+      b.addEventListener("click", () => {
+        buttons.forEach((t) => {
+          t.setAttribute("aria-selected", String(t === b))
+          t.tabIndex = t === b ? 0 : -1
+        })
+        show(b)
+      })
+      b.addEventListener("keydown", (e) => {
+        if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return
+        const next = buttons[(i + (e.key === "ArrowRight" ? 1 : buttons.length - 1)) % buttons.length]
+        next.focus()
+        next.click()
+      })
+    })
+  }
+
   const img = document.getElementById("shot-img")
   const cap = document.getElementById("shot-cap")
-  tabs.forEach((b, i) => {
-    b.addEventListener("click", () => {
-      tabs.forEach((t) => t.setAttribute("aria-selected", String(t === b)))
-      img.src = b.dataset.src
-      img.alt = b.dataset.alt
-      cap.textContent = b.dataset.cap
-    })
-    b.addEventListener("keydown", (e) => {
-      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return
-      const next = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length]
-      next.focus()
-      next.click()
-    })
+  tablist([...document.querySelectorAll(".tabs button")], (b) => {
+    img.src = b.dataset.src
+    img.alt = b.dataset.alt
+    cap.textContent = b.dataset.cap
+  })
+
+  const logs = [...document.querySelectorAll(".term-tabs button")]
+  tablist(logs, (b) => {
+    for (const t of logs) document.getElementById(t.getAttribute("aria-controls")).hidden = t !== b
+  })
+
+  const root = document.documentElement
+  document.querySelector(".theme")?.addEventListener("click", () => {
+    const dark = root.dataset.theme
+      ? root.dataset.theme === "dark"
+      : matchMedia("(prefers-color-scheme: dark)").matches
+    root.dataset.theme = dark ? "light" : "dark"
+    try { localStorage.setItem("pg-theme", root.dataset.theme) } catch (e) {}
   })
 })()
