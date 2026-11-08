@@ -41,11 +41,21 @@ class ParsedURL:
     is_ip: bool
 
 
+def browser_slashes(s: str) -> str:
+    """Read backslashes the way browsers do: before the ? or #, a "\\" in a web link is a "/".
+
+    Python's urlsplit keeps "\\" as an ordinary character, so for https://evil.example\\@bank.com/
+    it reports the host bank.com, while Chrome and Edge open evil.example. PhishGuard must judge
+    the site the browser will really open (found in the Phase 9 security self-test)."""
+    cut = min((i for i in (s.find("?"), s.find("#")) if i >= 0), default=len(s))
+    return s[:cut].replace("\\", "/") + s[cut:]
+
+
 def normalise(raw: str) -> str:
     """Clean what a user pasted or Windows handed us, and refuse non-web schemes."""
     if raw is None:
         raise UnsafeURL("empty link")
-    s = raw.strip().strip("<>\"'").strip()
+    s = browser_slashes(raw.strip().strip("<>\"'").strip())
     if not s:
         raise UnsafeURL("empty link")
     if len(s) > MAX_URL_LENGTH:

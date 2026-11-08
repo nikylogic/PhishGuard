@@ -32,9 +32,9 @@ def detect() -> list[dict]:
     return out
 
 
-# Programs that are PhishGuard itself (the launcher runs under Python). A link is never handed
-# to one of these, or it would come straight back into PhishGuard.
-NOT_A_BROWSER = {"python.exe", "pythonw.exe", "py.exe", "pyw.exe"}
+# Programs that are PhishGuard itself (the launcher runs under Python; the installed app is
+# PhishGuard.exe). A link is never handed to one of these, or it would come straight back into PhishGuard.
+NOT_A_BROWSER = {"python.exe", "pythonw.exe", "py.exe", "pyw.exe", "phishguard.exe", "phishguardengine.exe"}
 
 
 def is_browser(path: str) -> bool:

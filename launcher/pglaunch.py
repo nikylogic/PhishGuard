@@ -31,7 +31,7 @@ from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parent.parent
 HOST = "127.0.0.1"
-NOT_A_BROWSER = {"python.exe", "pythonw.exe", "py.exe", "pyw.exe"}
+NOT_A_BROWSER = {"python.exe", "pythonw.exe", "py.exe", "pyw.exe", "phishguard.exe", "phishguardengine.exe"}
 CHROMIUM = ("chrome", "msedge", "brave")
 START_TIMEOUT = 30.0       # first start loads the AI Guard model and the sandbox browser
 BACKGROUND_TIMEOUT = 120.0  # at sign-in the PC is busy; there is no one waiting
@@ -70,6 +70,11 @@ def log(cfg: dict, line: str) -> None:
 def check_link(raw: str) -> tuple[str, str]:
     """Return (url, host) for an http(s) link, or raise Refused."""
     url = (raw or "").strip().strip('"')
+    # Browsers read "\" as "/" before the ? or #: https://evil.example\@bank.com/ opens evil.example.
+    # Judge (and pass on) the link exactly as the browser will read it, or a trusted name after a
+    # backslash would skip the check. Same rule as phishguard/urltools.py browser_slashes().
+    cut = min((i for i in (url.find("?"), url.find("#")) if i >= 0), default=len(url))
+    url = url[:cut].replace("\\", "/") + url[cut:]
     if not url:
         raise Refused("There was no link.")
     # Spaces, control characters and invisible "format" characters (zero-width spaces, right-to-left
@@ -168,9 +173,32 @@ def start_server(cfg: dict, popen=subprocess.Popen, env=os.environ) -> None:
     (cfg["instance"] / "server.pid").write_text(str(proc.pid), encoding="utf-8")
 
 
-def ensure_server(cfg: dict, popen=subprocess.Popen, env=os.environ, timeout: float | None = None) -> None:
+UPDATE_LOCK = "updating.json"   # written by the engine just before an update installs (phishguard/updater.py)
+UPDATE_WAIT = 90.0              # an update takes 20-40 s; the installer starts the new engine itself
+UPDATE_STALE = 300.0
+
+
+def updating(cfg: dict) -> bool:
+    """True while an update is being installed (the lock is fresh and the engine is down)."""
+    try:
+        return time.time() - (cfg["instance"] / UPDATE_LOCK).stat().st_mtime < UPDATE_STALE
+    except OSError:
+        return False
+
+
+def ensure_server(cfg: dict, popen=subprocess.Popen, env=os.environ, timeout: float | None = None,
+                  wait_update: bool = True) -> None:
     if healthy(cfg):
         return
+    if wait_update and updating(cfg):
+        # Starting the old engine now would lock files the installer is replacing. Wait for the
+        # new engine instead; if it does not come, start whatever is installed.
+        log(cfg, "update in progress: waiting for the new engine")
+        end = time.monotonic() + UPDATE_WAIT
+        while time.monotonic() < end:
+            if healthy(cfg):
+                return
+            time.sleep(0.5)
     start_server(cfg, popen=popen, env=env)
     end = time.monotonic() + (START_TIMEOUT if timeout is None else timeout)
     while time.monotonic() < end:
@@ -384,16 +412,18 @@ def focus_existing(env=os.environ) -> bool:
 
 def main(argv: list[str], env=os.environ, popen=subprocess.Popen, alert=message_box, window=open_window,
          out=sys.stdout) -> int:
-    flags = {"--no-window", "--dashboard", "--background"}
+    flags = {"--no-window", "--dashboard", "--background", "--after-update"}
     args = [a for a in argv[1:] if a not in flags]
     no_window = "--no-window" in argv[1:]
     cfg = config(env)
     raw = args[0] if args else ""
-    if "--background" in argv[1:]:
+    if "--background" in argv[1:] or "--after-update" in argv[1:]:
         # Start with Windows: get the engine ready so the first link is checked at once. Quiet on
         # failure (no dialog at sign-in); the next click starts the engine anyway.
+        # --after-update: the installer has finished an update and starts the new engine at once.
         try:
-            ensure_server(cfg, popen=popen, env=env, timeout=BACKGROUND_TIMEOUT)
+            ensure_server(cfg, popen=popen, env=env, timeout=BACKGROUND_TIMEOUT,
+                          wait_update="--after-update" not in argv[1:])
             log(cfg, f"background: engine ready at {time.monotonic() - STARTED:.1f} s")
             return 0
         except Exception as e:  # noqa: BLE001

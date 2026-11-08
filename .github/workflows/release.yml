@@ -57,6 +57,16 @@ jobs:
           choco install innosetup -y --no-progress
           & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" packaging\PhishGuard.iss
 
+      - name: Sign the update
+        # The installed app only installs an update whose update.json is signed with this key
+        # (phishguard/updater.py). The key is a repository secret; the build fails without it.
+        shell: bash
+        env:
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
+        run: |
+          pip install cryptography==46.0.3
+          python packaging/sign_update.py "build/installer/PhishGuard-Setup-${GITHUB_REF_NAME#v}.exe"
+
       - name: Publish the release
         shell: bash
         env:
@@ -65,5 +75,5 @@ jobs:
           cd build/installer
           file="PhishGuard-Setup-${GITHUB_REF_NAME#v}.exe"
           sha256sum "$file" > "$file.sha256"
-          gh release create "$GITHUB_REF_NAME" "$file" "$file.sha256" \
+          gh release create "$GITHUB_REF_NAME" "$file" "$file.sha256" update.json update.json.sig \
             --title "PhishGuard $GITHUB_REF_NAME" --generate-notes
