@@ -10,13 +10,13 @@ A free link airlock for Windows, with its full source code here on GitHub. Click
 
 [![Windows 11](https://img.shields.io/badge/Windows-11-0078D4?logo=windows&logoColor=white)](#install)
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](#build-from-source)
-[![Tests](https://img.shields.io/badge/tests-495%20passing-2ea44f)](#tested-on-real-phishing)
+[![Tests](https://img.shields.io/badge/tests-552%20passing-2ea44f)](#tested-on-real-phishing)
 [![Runs locally](https://img.shields.io/badge/runs-100%25%20on%20your%20PC-555)](#privacy)
 [![Cost](https://img.shields.io/badge/cost-free%20for%20personal%20use-2ea44f)](#license)
 [![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial-blue)](LICENSING.md)
 [![CI](https://github.com/nikylogic/PhishGuard/actions/workflows/ci.yml/badge.svg)](https://github.com/nikylogic/PhishGuard/actions/workflows/ci.yml)
 
-[Install](#install) · [How it works](#how-it-works) · [How it spots a fake site](#how-it-spots-a-fake-site) · [Results](#tested-on-real-phishing) · [Screenshots](#screenshots) · [Privacy](#privacy) · [Build](#build-from-source)
+**[Website](https://nikylogic.github.io/PhishGuard/)** · [Install](#install) · [How it works](#how-it-works) · [How it spots a fake site](#how-it-spots-a-fake-site) · [Results](#tested-on-real-phishing) · [Screenshots](#screenshots) · [Privacy](#privacy) · [Build](#build-from-source)
 
 <img src="docs/images/airlock-danger.png" width="820" alt="PhishGuard stopping a fake HDFC Bank login page">
 
